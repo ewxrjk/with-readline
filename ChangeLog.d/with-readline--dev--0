@@ -2,6 +2,20 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-13 15:23:26 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-11
+
+    Summary:
+      working again on darwin
+    Revision:
+      with-readline--dev--0--patch-11
+
+    * configure.ac: Don't seek -lcurses on Darwin as it screws up linking.
+                    Correct pty acquisition method logic for BSD
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 configure.ac
+
+
 2005-03-13 15:07:46 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-10
 
     Summary:
