@@ -2,6 +2,20 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-13 18:06:57 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-16
+
+    Summary:
+      build on darwin again
+    Revision:
+      with-readline--dev--0--patch-16
+
+    * with-readline.h: libutil has an xrealloc too, use a macro to avoid
+      clashing.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 with-readline.h
+
+
 2005-03-13 18:01:54 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-15
 
     Summary:

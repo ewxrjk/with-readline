@@ -50,6 +50,8 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#define xrealloc xrealloc_workaround_libutil
+
 void xfclose(FILE *fp);
 int xprintf(const char *s, ...);
 char *xstrdup(const char *s);
