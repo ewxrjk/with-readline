@@ -22,6 +22,7 @@
 
 static int ptm;                         /* master pty fd */
 static int readline_callback_installed; /* callback installed? */
+static int sigpipe[2];                  /* signal notifications */
 
 static const struct option options[] = {
   { "help", no_argument, 0, 'h' },
@@ -120,8 +121,16 @@ static void prep_nop(int attribute((unused)) meta) {
 static void deprep_nop() {
 }
 
+static void sighandler(int sig) {
+  unsigned char s = sig;
+  int save = errno;
+
+  write(sigpipe[1], &s, 1);
+  errno = save;
+}
+
 int main(int argc, char **argv) {
-  int n, pts, parentpts, p[2], err;
+  int n, pts, parentpts, p[2], err, max;
   char *ptspath;
   FILE *tty;
   fd_set fds;
@@ -130,6 +139,8 @@ int main(int argc, char **argv) {
   char buf[4096], *line = 0, *ptr;
   pid_t pid, r;
   size_t lspace = 0, llen = 0;
+  struct sigaction sa;
+  unsigned char sig;
 
   /* we might be setuid/setgid at this point */
 
@@ -153,6 +164,12 @@ int main(int argc, char **argv) {
      */
     make_terminal(&ptm, &parentpts, &ptspath);
     surrender_privilege();
+    if(pipe(sigpipe) < 0) fatal(errno, "error creating pipe");
+    sa.sa_handler = sighandler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    if(sigaction(SIGWINCH, &sa, 0) < 0)
+      fatal(errno, "error installing SIGWINCH handler");
     /* get old terminal settings */
     if(tcgetattr(0, &t) < 0)
       fatal(errno, "error calling tcgetattr");
@@ -164,7 +181,6 @@ int main(int argc, char **argv) {
 
       /* parent */
     default:
-      signal(SIGPIPE, SIG_IGN);
       /* wait for child to open slave */
       xclose(p[1]);
       read(p[0], buf, 1);
@@ -184,9 +200,15 @@ int main(int argc, char **argv) {
       rl_deprep_term_function = deprep_nop;
       while(ptm != -1) {
         FD_ZERO(&fds);
-        FD_SET(0, &fds);                /* await input */
-        FD_SET(ptm, &fds);              /* to detect slaves closing */
-        n = select(ptm + 1, &fds, 0, 0, 0);
+        max = 0;
+#define addfd(FD) do {                          \
+  FD_SET((FD), &fds);                           \
+  if((FD) > max) max = (FD);                    \
+} while(0);
+        addfd(0);                       /* await input */
+        addfd(ptm);                     /* to detect slaves closing */
+        addfd(sigpipe[0]);
+        n = select(max + 1, &fds, 0, 0, 0);
         if(n < 0) {
           if(errno == EINTR)
             continue;
@@ -200,7 +222,9 @@ int main(int argc, char **argv) {
             llen = 0;
           }
           rl_callback_read_char();      /* input is available */
-        } else if(FD_ISSET(ptm, &fds)) {
+          if(ptm == -1) break;          /* might get closed */
+        }
+        if(FD_ISSET(ptm, &fds)) {
           n = read(ptm, buf, sizeof buf);
           if(n < 0) {
             if(errno == EIO) break;     /* no more slaves */
@@ -231,6 +255,20 @@ int main(int argc, char **argv) {
           /* the bytes read will be whatever we sent down ptm lately, we just
            * discard them */
         }
+        if(FD_ISSET(sigpipe[0], &fds)) {
+          n = read(sigpipe[0], &sig, 1);
+          if(n < 0) {
+            if(errno != EINTR) fatal(errno, "error reading from signal pipe");
+          } else if(!n) fatal(0, "signal pipe unexpectedly reached EOF");
+          switch(sig) {
+          case SIGWINCH:
+            /* propagate window size changes */
+            if(ioctl(0, TIOCGWINSZ, &w) < 0)
+              fatal(errno, "error calling ioctl TIOCGWINSZ");
+            if(ioctl(ptm, TIOCSWINSZ, &w) < 0)
+              fatal(errno, "error calling ioctl TIOSGWINSZ");
+          }
+        }
       }
       if(readline_callback_installed) {
         rl_callback_handler_remove();
@@ -260,7 +298,10 @@ int main(int argc, char **argv) {
       /* signal to parent that we have opened the slave */
       xclose(p[0]);
       xclose(p[1]);
+      /* close stuff we don't need */
       xclose(parentpts);
+      xclose(sigpipe[0]);
+      xclose(sigpipe[1]);
       if(pts != 0 && dup2(pts, 0) < 0) fatal(errno, "error calling dup2");
       if(pts != 1 && dup2(pts, 1) < 0) fatal(errno, "error calling dup2");
       if(pts != 2 && dup2(pts, 2) < 0) fatal(errno, "error calling dup2");

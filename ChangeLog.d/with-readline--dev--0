@@ -2,6 +2,20 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-13 17:42:53 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-13
+
+    Summary:
+      cope with window size changes
+    Revision:
+      with-readline--dev--0--patch-13
+
+    * with-readline.c: propagate window size changes to the command.  Uses
+      new signal pipe infrastructure to pick up SIGWINCH.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 with-readline.c
+
+
 2005-03-13 17:20:02 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-12
 
     Summary:
