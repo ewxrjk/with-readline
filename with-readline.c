@@ -125,6 +125,16 @@ static void unblock(int sig) {
     fatal(errno, "error calling sigprocmask");
 }
 
+static void resize(void) {
+  struct winsize w;
+
+  if(ioctl(0, TIOCGWINSZ, &w) < 0)
+    fatal(errno, "error calling ioctl TIOCGWINSZ");
+  if(ioctl(ptm, TIOCSWINSZ, &w) < 0)
+    fatal(errno, "error calling ioctl TIOSGWINSZ");
+  rl_resize_terminal();
+}
+
 /* run an iteration of the event loop */
 static void eventloop(void) {
   fd_set fds;
@@ -132,7 +142,6 @@ static void eventloop(void) {
   unsigned char ch, sig;
   const char *ptr;
   char buf[4096];
-  struct winsize w;
 
   if(ptm == -1) return;
   
@@ -217,16 +226,12 @@ static void eventloop(void) {
     switch(sig) {
     case SIGWINCH:
       /* propagate window size changes */
-      if(ioctl(0, TIOCGWINSZ, &w) < 0)
-        fatal(errno, "error calling ioctl TIOCGWINSZ");
-      if(ioctl(ptm, TIOCSWINSZ, &w) < 0)
-        fatal(errno, "error calling ioctl TIOSGWINSZ");
-      rl_resize_terminal();
+      resize();
       break;
     case SIGCONT:
       if(tcsetattr(0, TCSANOW, &reading_termios) < 0)
         fatal(errno, "error calling tcsetattr");
-      rl_resize_terminal();
+      resize();
       break;
     default:                            /* some fatal signal */
       if(tcsetattr(0, TCSANOW, &original_termios) < 0)
@@ -410,6 +415,7 @@ int main(int argc, char **argv) {
               fatal(err, "error writing to pty master");
             free(s);
           }
+          rl_replace_line("", 1);
         }
       }
       if(tcsetattr(0, TCSANOW, &original_termios) < 0)

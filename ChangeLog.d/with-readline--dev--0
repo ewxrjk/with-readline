@@ -2,6 +2,24 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-26 15:44:59 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-33
+
+    Summary:
+      terminal resize bugfixes
+    Revision:
+      with-readline--dev--0--patch-33
+
+    * with-readline.c: check terminal resize on SIGCONT
+    
+    * with-readline.c: clear Readline's notion of the input line after
+      processing it.  Otherwise if you resize before any characters have been
+      typed it still believes it is in the middle of editing and redisplays
+      the last line.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 with-readline.c
+
+
 2005-03-26 15:39:13 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-32
 
     Summary:
