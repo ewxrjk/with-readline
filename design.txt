@@ -50,10 +50,11 @@ This implies:
    read (or EOF indication).
 
 Ian Jackson suggested using SIGTTIN to notice when the command was
-ready to receive input.  The advantage of this would be that input was
-not echoed at all until the prompt was printed; type-ahead and
-INTR/QUIT propagation can still both be made to work simultaneously by
-buffering keyboard input and dumping it on Readline all at once.
+ready to receive input (see below for more about this).  The advantage
+of this would be that input was not echoed at all until the prompt was
+printed; type-ahead and INTR/QUIT propagation can still both be made
+to work simultaneously by buffering keyboard input and dumping it on
+Readline all at once.
 
 So add to the above a buffer of characters to return to readline.  The
 outer loop invokes the event loop if the buffer is empty and readline
@@ -93,6 +94,62 @@ SIGSTOP.  Therefore:
 
  * the shell is expected to sort out its own terminal settings
 
+Using SIGTTIN
+=============
+
+This section is not implemented yet (and may not be, given the
+behaviour without seems tolerable).
+
+The desired behaviour is for the child to be able to write at will
+(i.e. to not be stopped by SIGTTOU), but to get a SIGTTIN when it
+attempts to read.  At that point with-readline knows it must have
+printed its prompt (currently it guesses that the user only starts
+typing when the prompt appears, which may not be the case).
+
+Ignoring SIGTTOU should cause writes to just succeed: this is
+explicitly blessed by POSIX.
+
+However there is a complication that tcsetpgrp() and tcgetpgrp() must
+be called with the controlling terminal of the calling process.  Thus
+the parent with-readline process cannot be responsible for calling
+these functions.
+
+Therefore it is necessary to interpose a "shell" subprocess.  This
+will be the session leader.  It will start the command in a new
+process group, with SIGTTOU ignored, and will switch the terminal's
+foreground process group between itself and its child as necessary.
+
+Initially it will make the terminal's process group be its own process
+group.  So when the child reads for the first time it will get
+SIGTTIN.  This will be detected by the shell process, which will
+report this to the parent process.
+
+When a line is available the shell and with-readline will cooperate to
+make the child process group the foreground process group and then
+transmit the line to it, before putting it into the background again.
+Unanswered question: how do we ensure that the whole line is read
+before doing this?  (Perhaps we can find out how much is left unread
+in the terminal.)
+
+The same approach is taken for EOFs.
+
+There are two options for detecting termination.  One is for the shell
+to hold the slave pty open all the time and terminate when its
+immediate child (process group?) does.  The other is to keep it closed
+except when it needs to call tcsetpgrp and have the parent
+with-readline thus detect termination on the master side of the pty.
+
+All this might not work well with programs that select on standard
+input while still generating output.  They are probably not likely to
+be good candidates for use with with-readline anyway but it would be
+possible to provide a command-line option to suppress the above
+behaviour.
+
+References
+==========
+
+IEEE Std 1003.1 base definitions chapter 11 "General Terminal Interface"
+http://www.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap11.html
 
 
 # arch-tag:hhbNnL6jYYOPmQLoI0jUMA

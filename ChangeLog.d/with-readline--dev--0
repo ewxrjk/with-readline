@@ -2,6 +2,20 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-25 19:09:51 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-29
+
+    Summary:
+      SIGTTIN notes
+    Revision:
+      with-readline--dev--0--patch-29
+
+    * design.txt: notes about SIGTTIN.  Not implemented yet and fiddlier than
+      I first thought.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 design.txt with-readline.c
+
+
 2005-03-19 23:37:42 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-28
 
     Summary:

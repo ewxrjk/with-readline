@@ -224,7 +224,6 @@ static void eventloop(void) {
       rl_resize_terminal();
       break;
     case SIGCONT:
-      /* XXX consider also window size change */
       if(tcsetattr(0, TCSANOW, &reading_termios) < 0)
         fatal(errno, "error calling tcsetattr");
       rl_resize_terminal();
