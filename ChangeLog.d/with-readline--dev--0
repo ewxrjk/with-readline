@@ -2,6 +2,19 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-28 17:12:21 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-36
+
+    Summary:
+      bsd build fixes
+    Revision:
+      with-readline--dev--0--patch-36
+
+    * with-readline.h: work around libutils's xmalloc symbol as for xrealloc
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 with-readline.h
+
+
 2005-03-27 18:20:22 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-35
 
     Summary:

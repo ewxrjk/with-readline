@@ -54,6 +54,7 @@
 #include <limits.h>
 
 #define xrealloc xrealloc_workaround_libutil
+#define xmalloc xmalloc_workaround_libutil
 
 void xfclose(FILE *fp);
 int xprintf(const char *s, ...);
