@@ -47,6 +47,7 @@
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <grp.h>
 #include <termios.h>
 #include <readline/readline.h>
 #include <readline/history.h>

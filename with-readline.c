@@ -275,6 +275,8 @@ int main(int argc, char **argv) {
   pid_t pid, r;
   const char *app = 0;
   struct stat sb;
+  struct group *g;
+  mode_t modemask;
 
   /* This is supposed to be a list of signals which by default terminate the
    * process.  Excluded are those that make a coredump, on the assumption that
@@ -442,11 +444,14 @@ int main(int argc, char **argv) {
       /* check that the terminal has sensible permissions */
       if(fstat(pts, &sb) < 0) fatal(errno, "error calling fstat on %s",
                                     ptspath);
-      /* group write is ok - used by write(1) and similar programs
+      /* group tty write is ok - used by write(1) and similar programs
+       * group anything else write is not safe however.
        * group read is bad - shoulnd't give those programs excess privilege
        * world read or write is very bad!
        */
-      if(sb.st_mode & 057)
+      if((g = getgrnam("tty")) && sb.st_gid == g->gr_gid) modemask = 057;
+      else modemask = 077;
+      if(sb.st_mode & modemask)
         fatal(0, "%s has insecure mode %#lo",
               ptspath, (unsigned long)sb.st_mode);
       if(sb.st_uid != getuid())

@@ -2,6 +2,21 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-19 23:37:42 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-28
+
+    Summary:
+      strict security checking
+    Revision:
+      with-readline--dev--0--patch-28
+
+    * with-readline.c: stricter pty permission checking: group write is only
+      allowed if the pty's group ID is 'tty'.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 with-readline.c
+     with-readline.h
+
+
 2005-03-19 23:30:37 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-27
 
     Summary:
