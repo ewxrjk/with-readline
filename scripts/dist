@@ -1,5 +1,6 @@
+#! /bin/bash
 #
-# This file is part of with-readline.
+# This file is part of with-readline
 # Copyright (C) 2005 Richard Kettlewell
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,23 +18,15 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 #
-
-bin_PROGRAMS=with-readline
-
-with_readline_SOURCES=with-readline.c pty-unix98.c pty-bsd.c util.c	\
-with-readline.h getopt.h buffer.c
-with_readline_LDADD=$(LIBOBJS) $(LIBREADLINE)
-
-man_MANS=with-readline.1
-
-EXTRA_DIST=ChangeLog.d $(man_MANS) README
-
-install-exec-hook:
-if SETUID
-	chown 0:0 $(DESTDIR)$(bindir)/with-readline$(EXEEXT)
-	chmod 4555 $(DESTDIR)$(bindir)/with-readline$(EXEEXT)
-endif
-
-echo-distdir:
-	@echo $(distdir)
-# arch-tag:UzftHuacSCXqQdpEMXpLmQ
+set -e
+make
+make dist-bzip2
+d=$(make echo-distdir)
+cp $d.tar.bz2 $HOME/work/web/2005
+exit 0				# no html man yet
+for f in *.[1-9].html; do
+  echo $f
+  rm -f $HOME/work/web/2005/$f
+  sed < $f > $HOME/work/web/2005/$f 's/^@.*//'
+done
+# arch-tag:bMfA5551Fde+uRL6KsyqAw

@@ -2,6 +2,28 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-26 16:23:35 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-34
+
+    Summary:
+      release 0.1
+    Revision:
+      with-readline--dev--0--patch-34
+
+    * Makefile.am: echo-distdir emits stem of tarball name
+    * README: ages since last tested outside Linux/Darwin, so sound less
+      certain about other UNIXes.
+    * with-readline.1: spelling corrections
+    * scripts/dist: adapted from DisOrder's dist script
+    * configure.ac: change version number to 0.1
+
+    new files:
+     scripts/dist
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 Makefile.am README
+     configure.ac with-readline.1
+
+
 2005-03-26 15:44:59 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-33
 
     Summary:

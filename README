@@ -10,8 +10,8 @@ For example:
 
 adds basic line editing to an sftp session.
 
-I test with-readline on Linux and Mac OS X, and occasionally other
-UNIX platforms.
+I test with-readline on Linux and Mac OS X.  Other UNIX platforms
+might or might not work (patches invited).
 
 Installation
 ------------
