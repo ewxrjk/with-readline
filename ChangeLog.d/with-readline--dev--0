@@ -2,6 +2,21 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-13 17:52:26 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-14
+
+    Summary:
+      don't add blank lines to history
+    Revision:
+      with-readline--dev--0--patch-14
+
+    * with-readline.c: don't add blank lines to history
+    * util.c: xrealloc() is error-checking unambiguous realloc() wrapper
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 util.c with-readline.c
+     with-readline.h
+
+
 2005-03-13 17:42:53 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-13
 
     Summary:

@@ -77,8 +77,8 @@ static void read_line_callback(char *s) {
   int err;
 
   if(s) {
-    /* record line in history */
-    add_history(s);
+    /* record line in history if nonempty */
+    if(*s) add_history(s);
     /* pass input to slave reader */
     if((err = do_write(ptm, s))
        || (err = do_write(ptm, "\r")))
@@ -246,8 +246,7 @@ int main(int argc, char **argv) {
             while(lspace < llen + n + 1)
               if(!(lspace = lspace ? 2 * lspace : 1))
                 fatal(0, "insufficient memory");
-            if(!(line = realloc(line, lspace)))
-              fatal(errno, "error calling realloc");
+            line = xrealloc(line, lspace);
             memcpy(line + llen, ptr, n);
             llen += n;
             line[llen] = 0;

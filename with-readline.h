@@ -54,6 +54,7 @@ void xfclose(FILE *fp);
 int xprintf(const char *s, ...);
 char *xstrdup(const char *s);
 void xclose(int fd);
+void *xrealloc(void *ptr, size_t n);
 
 void fatal(int errno_value, const char *fmt, ...)
   attribute((noreturn))

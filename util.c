@@ -60,6 +60,16 @@ void xclose(int fd) {
   if(close(fd) < 0) fatal(errno, "error calling close");
 }
 
+void *xrealloc(void *ptr, size_t n) {
+  if(!n) {                              /* make ambiguous case unambiguous */
+    free(ptr);
+    return 0;
+  }
+  if(!(ptr = realloc(ptr, n)))
+    fatal(errno, "error calling realloc");
+  return ptr;
+}
+
 /*
 Local Variables:
 c-basic-offset:2
