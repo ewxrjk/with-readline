@@ -1,0 +1,59 @@
+#! /bin/bash
+#
+# This file is part of with-readline.
+# Copyright (C)  2005 Richard Kettlewell
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+#
+
+set -e
+set -x
+srcdir="$(dirname $0)"
+here="$(pwd)"
+if test "$(basename "$srcdir")" = scripts; then
+  srcdir="$srcdir/.."
+fi
+cd $srcdir
+rm -f COPYING
+for f in /usr/share/common-licenses/GPL-2 $HOME/doc/GPL-2; do
+  if test -e "$f"; then
+    ln -s "$f" COPYING
+    break
+  fi
+done
+for f in getopt.c getopt.h getopt1.c; do
+  if test ! -e $f; then
+    for d in /usr/share/autoproject/cli/c/none /usr/local/share/autoproject/cli/c/none /sw/share/autoproject/cli/c/none; do
+      if test -f $d/$f; then
+        ln -s $d/$f $f
+        break
+      fi
+    done
+  fi
+done
+mkdir config.aux
+if test -d $HOME/share/aclocal; then
+  aclocal --acdir=$HOME/share/aclocal
+else
+  aclocal
+fi
+autoconf
+autoheader
+automake -a || true		# for INSTALL
+automake --foreign -a
+cd "$here"
+$srcdir/configure "$@"
+# arch-tag:2RfK89XAbB79MideoM7SkA
