@@ -273,6 +273,7 @@ int main(int argc, char **argv) {
   char buf[4096];
   pid_t pid, r;
   const char *app = 0;
+  struct stat sb;
 
   /* This is supposed to be a list of signals which by default terminate the
    * process.  Excluded are those that make a coredump, on the assumption that
@@ -436,6 +437,19 @@ int main(int argc, char **argv) {
       if(ioctl(pts, TIOCSCTTY) < 0)
         fatal(errno, "error calling ioctl TIOCSCTTY");
 #endif
+      /* check that the terminal has sensible permissions */
+      if(fstat(pts, &sb) < 0) fatal(errno, "error calling fstat on %s",
+                                    ptspath);
+      /* group write is ok - used by write(1) and similar programs
+       * group read is bad - shoulnd't give those programs excess privilege
+       * world read or write is very bad!
+       */
+      if(sb.st_mode & 057)
+        fatal(0, "%s has insecure mode %#lo",
+              ptspath, (unsigned long)sb.st_mode);
+      if(sb.st_uid != getuid())
+        fatal(0, "%s has owner %lu, but we are running as UID %lu",
+              ptspath, (unsigned long)sb.st_uid, (unsigned long)getuid());
       /* signal to parent that we have opened the slave */
       xclose(p[0]);
       xclose(p[1]);

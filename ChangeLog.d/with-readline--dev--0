@@ -2,6 +2,26 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-19 23:24:18 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-26
+
+    Summary:
+      improve BSD-style pty handling
+    Revision:
+      with-readline--dev--0--patch-26
+
+    * with-readline.c: check terminal owner and permissions.
+    * pty-bsd.c: don't check that we are running as root.
+    
+    Thus it should be possible to run on platforms with an openpty() that
+    doesn't depend on being root to operate correctly (although I don't know
+    of any such platforms).  The other effect is that the error message you
+    get when with-readline is wrongly installed is a bit scarier.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 pty-bsd.c with-readline.c
+     with-readline.h
+
+
 2005-03-19 19:52:08 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-25
 
     Summary:
