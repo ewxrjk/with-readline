@@ -23,6 +23,7 @@
 static int ptm;                         /* master pty fd */
 static int readline_callback_installed; /* callback installed? */
 static int sigpipe[2];                  /* signal notifications */
+static int readline_getc_result = EOF;  /* saved character */
 
 static const struct option options[] = {
   { "application", required_argument, 0, 'a' },
@@ -131,18 +132,27 @@ static void sighandler(int sig) {
   errno = save;
 }
 
+static int getc_callback(FILE attribute((unused)) *fp) {
+  int ch;
+
+  if((ch = readline_getc_result) == EOF)
+    fatal(0, "read character callback called in wrong state");
+  readline_getc_result = EOF;
+  return ch;
+}
+
 int main(int argc, char **argv) {
   int n, pts, p[2], err, max;
   char *ptspath;
   FILE *tty;
   fd_set fds;
   struct winsize w;
-  struct termios t;
+  struct termios original_termios, t;
   char buf[4096], *line = 0;
   pid_t pid, r;
   size_t lspace = 0, llen = 0;
   struct sigaction sa;
-  unsigned char sig;
+  unsigned char sig, ch;
   const char *ptr, *app =0;
 
   /* we might be setuid/setgid at this point */
@@ -186,7 +196,7 @@ int main(int argc, char **argv) {
       fatal(errno, "error installing SIGWINCH handler");
     /* get old terminal settings; later on we'll apply these to the subsiduary
      * terminal */
-    if(tcgetattr(0, &t) < 0)
+    if(tcgetattr(0, &original_termios) < 0)
       fatal(errno, "error calling tcgetattr");
     if(ioctl(0, TIOCGWINSZ, &w) < 0)
       fatal(errno, "error calling ioctl TIOCGWINSZ");
@@ -211,11 +221,21 @@ int main(int argc, char **argv) {
       rl_instream = stdin;              /* needed by rl_prep_terminal */
       rl_outstream = tty;
       rl_prep_terminal(1);              /* want key at a time mode always */
+      /* disable INTR and QUIT, since we want to pass them through the pty. */
+      if(tcgetattr(0, &t) < 0)
+        fatal(errno, "error calling tcgetattr");
+      t.c_cc[VINTR] = t.c_cc[VQUIT] = 0;
+      if(tcsetattr(0, TCSANOW, &t) < 0)
+        fatal(errno, "error calling tcsetattr");
+      /* XXX we don't handle SUSP yet. */
       /* stop rl_callback_handler_install/remove from fiddling with terminal
        * settings.  Readline documentation suggests we can set these to 0, but
        * it is a lying toad: this is not so (at least in 4.3).  */
       rl_prep_term_function = prep_nop;
       rl_deprep_term_function = deprep_nop;
+      /* replace rl_getc with our own function for fine-grained control over
+       * input */
+      rl_getc_function = getc_callback;
       while(ptm != -1) {
         FD_ZERO(&fds);
         max = 0;
@@ -233,6 +253,32 @@ int main(int argc, char **argv) {
           fatal(errno, "error calling select");
         }
         if(FD_ISSET(0, &fds)) {
+          /* Read a single character.  We could read many characters, parse out
+           * the special characters, and dribble the remainder into readline,
+           * but we only have to keep up with a human typist so the extra
+           * effort doesn't seem worthwhile. */
+          n = read(0, &ch, 1);
+          if(n < 0) {
+            if(errno == EINTR) continue;
+            fatal(errno, "error reading from standard input");
+          }
+          if(n == 0) {                  /* no more stdin */
+            xclose(ptm);
+            ptm = -1;
+            break;
+          }
+          /* check for interrupting characters and send them straight on to the
+           * command. */
+          if(ch == original_termios.c_cc[VINTR]
+             || ch == original_termios.c_cc[VQUIT]) {
+            switch(err = do_writen(ptm, &ch, 1)) {
+            case 0: break;
+            default: fatal(err, "error writing to master");
+            }
+            continue;
+          }
+          /* pass the character to readline */
+          readline_getc_result = ch;
           if(!readline_callback_installed) {
             rl_already_prompted = 1;
             rl_callback_handler_install(llen ? line : "", read_line_callback);
@@ -312,8 +358,14 @@ int main(int argc, char **argv) {
     case 0:
       exitfn = _exit;
       xclose(ptm);
+      if(setsid() < 0)
+        fatal(errno, "error calling setsid");
       if((pts = open(ptspath, O_RDWR, 0)) < 0)
         fatal(errno, "opening %s", ptspath);
+#ifdef TIOCSCTTY
+      if(ioctl(pts, TIOCSCTTY) < 0)
+        fatal(errno, "error calling ioctl TIOCSCTTY");
+#endif
       /* signal to parent that we have opened the slave */
       xclose(p[0]);
       xclose(p[1]);
@@ -326,8 +378,8 @@ int main(int argc, char **argv) {
       if(pts > 2) xclose(pts);
       if(ioctl(0, TIOCSWINSZ, &w) < 0)
         fatal(errno, "error calling ioctl TIOSGWINSZ");
-      t.c_lflag &= ~ECHO;
-      if(tcsetattr(0, TCSANOW, &t) < 0)
+      original_termios.c_lflag &= ~ECHO;
+      if(tcsetattr(0, TCSANOW, &original_termios) < 0)
         fatal(errno, "error calling tcsetattr");
       /* fall through to execution */
       break;

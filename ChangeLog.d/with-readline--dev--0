@@ -2,6 +2,34 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-13 20:27:04 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-19
+
+    Summary:
+      improved terminal handling (part 1)
+    Revision:
+      with-readline--dev--0--patch-19
+
+    * with-readline.c: Put subprocess into a new session, so it can pick up
+      the pty as its controlling terminal.  (Where available we call the
+      ioctl for this.)
+    
+      Intercept the INTR and QUIT keys, so that we can pass them straight to
+      the psuedo-terminal.  For INTR this means that the signal goes to the
+      command and its descendants; before the above change it did anyway so
+      this is just maintaining existing function (although now the
+      consequences of pressing ^C are a little more verbose).  For QUIT it
+      means that the signal goes to the command rather than to with-readline,
+      which is new but probably what you really wanted.
+    
+      SUSP remains to consider, as does documentation.
+    
+      To make all this work we mess around with the terminal settings and
+      override readline's notion of how to read a character.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 with-readline.c
+
+
 2005-03-13 19:35:02 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-18
 
     Summary:
