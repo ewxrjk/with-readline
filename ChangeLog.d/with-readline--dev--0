@@ -2,6 +2,19 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-26 15:39:13 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-32
+
+    Summary:
+      more internal docs
+    Revision:
+      with-readline--dev--0--patch-32
+
+    * design.txt: more notes
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 design.txt
+
+
 2005-03-26 15:30:45 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-31
 
     Summary:

@@ -1,7 +1,7 @@
 How with-readline works
 =======================
 
-Readline started from an idea by Tony Finch, but has become quite
+with-readline started from an idea by Tony Finch, but has become quite
 complicated.
 
 Many programs enter an interactive mode if their input is a terminal
@@ -24,17 +24,13 @@ It then needs to do the following three things concurrently:
 Readline insists that its get character callback block if no input is
 available (and even using its callback-based interface calls it more
 than once per invocation so even though that might be convenient to
-use for other reasons does not solve our concurrency problem).
+use for other reasons does not solve the concurrency problem).
 Annoyingly I only discovered this part way through implementation.
 
-I initially wondered about using a subprocess or thread to be able to
-monitor the pty master fd while readline was blocking but then came up
-with an alternative idea.
-
-The idea then is to run the event loop both inside and outside the get
+The solution is to run the event loop both inside and outside the get
 character callback.  If it is inside it then any input characters
 (that are not intercepted) must be returned to Readline.  If it is
-inside it then it must invoke Readline and arrange for the next call
+outside it then it must invoke Readline and arrange for the next call
 to return the most recently read character.
 
 This implies:
@@ -49,6 +45,18 @@ This implies:
    character is available, and (in any case) returns the character
    read (or EOF indication).
 
+Currently only one character at a time is read from the input.  This
+makes it easier intercept special characters.  Readline does this
+natively anyway so there's not much of a loss.
+
+The terminal is not put into nonblocking mode.  If it was then
+SIGKILL, SIGSTOP or a crash would leave it in nonblocking mode, which
+can confuse some callers.
+
+If the terminal is already in nonblocking mode on entry then
+with-readline will cope (since it only ever calls read() when select()
+indicates there is data to read) and will not change to blocking mode.
+
 Ian Jackson suggested using SIGTTIN to notice when the command was
 ready to receive input (see below for more about this).  The advantage
 of this would be that input was not echoed at all until the prompt was
@@ -56,11 +64,12 @@ printed; type-ahead and INTR/QUIT propagation can still both be made
 to work simultaneously by buffering keyboard input and dumping it on
 Readline all at once.
 
-So add to the above a buffer of characters to return to readline.  The
-outer loop invokes the event loop if the buffer is empty and readline
-otherwise.  The get character callback invokes the event loop until
-the buffer is nonempty and then returns the next character in the
-buffer.
+So that this can be implemented, characters to return to readline are
+stored in an expandable buffer rather than a single-character buffer
+(which is all that is needed otherwise).  The outer loop invokes the
+event loop if the buffer is empty and readline otherwise.  The get
+character callback invokes the event loop until the buffer is nonempty
+and then returns the next character in the buffer.
 
 Terminal Settings
 =================
@@ -69,6 +78,11 @@ Since with-readline wants to select on input at all times, input had
 better not be in cooked mode.  So it puts the terminal into raw mode
 immediately and deny Readline the chance of changing this off its own
 bat.
+
+The psuedo-terminal settings are copied from the caller's terminal,
+with the exception that echoing is turned off, so that lines we send
+to the command aren't send back to with-readline (they have already
+been printed by Readline itself).
 
 Window Size Handling
 ====================
