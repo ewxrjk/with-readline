@@ -2,6 +2,34 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-13 17:20:02 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-12
+
+    Summary:
+      application-supplied prompts
+    Revision:
+      with-readline--dev--0--patch-12
+
+    * with-readline.c: support for application-supplied prompts.  This is
+      quite fiddly.
+    
+      We implement it by monitoring the command's output and treating the
+      latest incomplete line as the prompt.  Thus the command's output is
+      filtered entirely through with-readline.  We turn of echoing on the
+      terminal so that we don't get user input echoed back to them twice
+      (Readline having already printed it as they typed it).
+    
+      So that Readline always knows what the prompt is, we only install the
+      callback when we have some user input.  The assumption is that the user
+      only starts typing when they see the prompt.  This may not be true but
+      they were going to get a mess then anyway so it is relatively academic.
+    
+      We prep the terminal at the start and inhibit Readline from prepping or
+      deprepping it itself.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 README with-readline.c
+
+
 2005-03-13 15:23:26 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-11
 
     Summary:

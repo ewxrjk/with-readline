@@ -12,9 +12,9 @@ allows you to write lines to the file 'foo', just as 'cat foo' would,
 except that you can edit lines and scroll up and down through history
 while doing so.
 
-It is currently a little rudimentary in that it does not cope
-specially with prompts, support private keymaps, long term history
-files or any number of other possibly useful features.
+It is currently a little rudimentary in that it does not cope support
+private keymaps, long term history files or any number of other
+possibly useful features.
 
 I have tested with-readline on Linux and Mac OS X (Darwin).
 

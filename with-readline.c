@@ -21,6 +21,7 @@
 #include "with-readline.h"
 
 static int ptm;                         /* master pty fd */
+static int readline_callback_installed; /* callback installed? */
 
 static const struct option options[] = {
   { "help", no_argument, 0, 'h' },
@@ -50,30 +51,39 @@ static void version(void) {
 }
 
 /* write a string to ptm */
-static int do_write(int fd, const char *s) {
-  size_t l = strlen(s), m = 0;
+static int do_writen(int fd, const char *s, size_t l) {
+  size_t m = 0;
   int n;
 
   while(m < l) {
     n = write(fd, s + m, l - m);
     if(n < 0) {
-      if(errno == EPIPE) return -1;
       if(errno == EINTR) continue;
-      fatal(errno, "error writing to pty master");
+      return errno;
     } else
       m += n;
   }
   return 0;
 }
 
+/* write a string to ptm */
+static int do_write(int fd, const char *s) {
+  return do_writen(fd, s, strlen(s));
+}
+
 /* called with input lines (or eof indicator) */
 static void read_line_callback(char *s) {
+  int err;
+
   if(s) {
     /* record line in history */
     add_history(s);
     /* pass input to slave reader */
-    do_write(ptm, s);
-    do_write(ptm, "\r");
+    if((err = do_write(ptm, s))
+       || (err = do_write(ptm, "\r")))
+      fatal(err, "error writing to pty master");
+    rl_callback_handler_remove();
+    readline_callback_installed = 0;
   } else {
     /* close master so that slave reader gets EOF */
     xclose(ptm);
@@ -104,18 +114,25 @@ static void surrender_privilege(void) {
   }
 }
 
+static void prep_nop(int attribute((unused)) meta) {
+}
+
+static void deprep_nop() {
+}
+
 int main(int argc, char **argv) {
-  int n, pts, parentpts, p[2];
+  int n, pts, parentpts, p[2], err;
   char *ptspath;
   FILE *tty;
   fd_set fds;
   struct winsize w;
   struct termios t;
-  char buf[4096];
+  char buf[4096], *line = 0, *ptr;
   pid_t pid, r;
+  size_t lspace = 0, llen = 0;
 
   /* we might be setuid/setgid at this point */
-  
+
   /* parse command line */
   while((n = getopt_long(argc, argv, "hV", options, 0)) >= 0) {
     switch(n) {
@@ -147,6 +164,7 @@ int main(int argc, char **argv) {
 
       /* parent */
     default:
+      signal(SIGPIPE, SIG_IGN);
       /* wait for child to open slave */
       xclose(p[1]);
       read(p[0], buf, 1);
@@ -156,10 +174,14 @@ int main(int argc, char **argv) {
        * same terminal as stdin) */
       if(!(tty = fopen("/dev/tty", "r+")))
         fatal(errno, "error opening /dev/tty");
+      rl_instream = stdin;              /* needed by rl_prep_terminal */
       rl_outstream = tty;
-      /* we leave stdout to the command */
-      xclose(1);
-      rl_callback_handler_install("", read_line_callback);
+      rl_prep_terminal(1);              /* want key at a time mode always */
+      /* stop rl_callback_handler_install/remove from fiddling with terminal
+       * settings.  Readline documentation suggests we can set these to 0, but
+       * it is a lying toad: this is not so (at least in 4.3).  */
+      rl_prep_term_function = prep_nop;
+      rl_deprep_term_function = deprep_nop;
       while(ptm != -1) {
         FD_ZERO(&fds);
         FD_SET(0, &fds);                /* await input */
@@ -170,9 +192,15 @@ int main(int argc, char **argv) {
             continue;
           fatal(errno, "error calling select");
         }
-        if(FD_ISSET(0, &fds))
+        if(FD_ISSET(0, &fds)) {
+          if(!readline_callback_installed) {
+            rl_already_prompted = 1;
+            rl_callback_handler_install(llen ? line : "", read_line_callback);
+            readline_callback_installed = 1;
+            llen = 0;
+          }
           rl_callback_read_char();      /* input is available */
-        else if(FD_ISSET(ptm, &fds)) {
+        } else if(FD_ISSET(ptm, &fds)) {
           n = read(ptm, buf, sizeof buf);
           if(n < 0) {
             if(errno == EIO) break;     /* no more slaves */
@@ -180,11 +208,35 @@ int main(int argc, char **argv) {
             fatal(errno, "error reading master");
           } else if(!n)
             break;                      /* no more slaves */
+          else {
+            err = do_writen(1, buf, n);
+            switch(err) {
+            case 0: break;
+            default: fatal(err, "error writing to master");
+            }
+            /* figure out the output line so far */
+            for(ptr = buf + n; ptr > buf && ptr[-1] != '\n'; --ptr)
+              ;
+            if(ptr != buf) llen = 0;    /* new line */
+            n -= (ptr - buf);
+            while(lspace < llen + n + 1)
+              if(!(lspace = lspace ? 2 * lspace : 1))
+                fatal(0, "insufficient memory");
+            if(!(line = realloc(line, lspace)))
+              fatal(errno, "error calling realloc");
+            memcpy(line + llen, ptr, n);
+            llen += n;
+            line[llen] = 0;
+          }
           /* the bytes read will be whatever we sent down ptm lately, we just
            * discard them */
         }
       }
-      rl_callback_handler_remove();
+      if(readline_callback_installed) {
+        rl_callback_handler_remove();
+        readline_callback_installed = 0;
+      }
+      rl_deprep_terminal();
       /* wait for the child to terminate so we can return its exit status */
       while((r = waitpid(pid, &n, 0)) < 0 && errno == EINTR)
         ;
@@ -209,12 +261,13 @@ int main(int argc, char **argv) {
       xclose(p[0]);
       xclose(p[1]);
       xclose(parentpts);
-      if(pts != 0) {
-        if(dup2(pts, 0) < 0) fatal(errno, "error calling dup2");
-        xclose(pts);
-      }
+      if(pts != 0 && dup2(pts, 0) < 0) fatal(errno, "error calling dup2");
+      if(pts != 1 && dup2(pts, 1) < 0) fatal(errno, "error calling dup2");
+      if(pts != 2 && dup2(pts, 2) < 0) fatal(errno, "error calling dup2");
+      if(pts > 2) xclose(pts);
       if(ioctl(0, TIOCSWINSZ, &w) < 0)
         fatal(errno, "error calling ioctl TIOSGWINSZ");
+      t.c_lflag &= ~ECHO;
       if(tcsetattr(0, TCSANOW, &t) < 0)
         fatal(errno, "error calling tcsetattr");
       /* fall through to execution */
