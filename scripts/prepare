@@ -44,7 +44,7 @@ for f in getopt.c getopt.h getopt1.c; do
     done
   fi
 done
-mkdir config.aux
+test -d config.aux || mkdir config.aux
 if test -d $HOME/share/aclocal; then
   aclocal --acdir=$HOME/share/aclocal
 else

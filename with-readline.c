@@ -82,7 +82,7 @@ static void read_line_callback(char *s) {
 }
 
 int main(int argc, char **argv) {
-  int n, pts;
+  int n, pts, p[2];
   char *ptspath;
   FILE *tty;
   fd_set fds;
@@ -106,6 +106,7 @@ int main(int argc, char **argv) {
       fatal(errno, "error calling tcgetattr");
     if(ioctl(0, TIOCGWINSZ, &w) < 0)
       fatal(errno, "error calling ioctl TIOCGWINSZ");
+    if(pipe(p) < 0) fatal(errno, "error creating pipe");
     /* create the terminal */
     make_terminal(&ptm, &ptspath);
     switch(pid = fork()) {
@@ -113,6 +114,9 @@ int main(int argc, char **argv) {
 
       /* parent */
     default:
+      /* wait for child to open slave */
+      xclose(p[1]);
+      read(p[0], buf, 1);
       /* we always echo input to /dev/tty rather than whatever stdout or stderr
        * happen to be at the moment (it would be better to guarantee to use the
        * same terminal as stdin) */
@@ -140,7 +144,8 @@ int main(int argc, char **argv) {
             if(errno == EIO) break;     /* no more slaves */
             if(errno == EINTR) continue;
             fatal(errno, "error reading master");
-          }
+          } else if(!n)
+            break;                      /* no more slaves */
           /* the bytes read will be whatever we sent down ptm lately, we just
            * discard them */
         }
@@ -166,6 +171,9 @@ int main(int argc, char **argv) {
       xclose(ptm);
       if((pts = open(ptspath, O_RDWR, 0)) < 0)
         fatal(errno, "opening %s", ptspath);
+      /* signal to parent that we have opened the slave */
+      xclose(p[0]);
+      xclose(p[1]);
       if(pts != 0) {
         if(dup2(pts, 0) < 0) fatal(errno, "error calling dup2");
         xclose(pts);

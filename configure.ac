@@ -41,7 +41,7 @@ AC_DEFINE(_GNU_SOURCE, 1, [required for e.g. strsignal])
 AC_CHECK_LIB([readline], [readline],
             [AC_SUBST(LIBREADLINE,[-lreadline])],
             [missing_libraries="$missing_libraries libreadline"])
-AC_CHECK_LIB([openpty], [util])
+AC_CHECK_LIB([util], [openpty])
 
 if test ! -z "$missing_libraries"; then
   AC_MSG_ERROR([missing libraries:$missing_libraries])

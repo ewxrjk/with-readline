@@ -2,6 +2,26 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-12 17:41:30 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-1
+
+    Summary:
+      darwin port
+    Revision:
+      with-readline--dev--0--patch-1
+
+    Now works on Apple Darwin.
+    
+    * scripts/prepare: Only create config.aux if not exists.
+    * configure.ac: Get check for -lutil right way round.
+    * with-readline.c: Finish up when we get EOF on pty master
+                       Guarantee that pty slave is open before proceeding to
+                       event loop.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 configure.ac scripts/prepare
+     with-readline.c
+
+
 2005-03-12 13:36:08 GMT	Richard Kettlewell <rjk@greenend.org.uk>	base-0
 
     Summary:
