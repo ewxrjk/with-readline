@@ -61,14 +61,6 @@ extern int debugging;
 
 void make_terminal(int *ptmp, char **slavep);
 
-#if HAVE_GRANTPT && HAVE_UNLOCKPT && HAVE_PTSNAME
-# define PTY_UNIX98 1
-#elif HAVE_OPENPTY
-# define PTY_BSD 1
-#else
-# error No pty support
-#endif
-
 #ifndef PTMX_PATH
 # define PTMX_PATH "/dev/ptmx"
 #endif

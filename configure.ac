@@ -70,6 +70,28 @@ AC_CHECK_FUNCS([getopt_long],[:],[
 ])
 AC_CHECK_FUNCS([grantpt unlockpt ptsname openpty])
 
+AC_CACHE_CHECK([how to acquire a pseudo-terminal],[rjk_cv_pty_how],[
+  if test $ac_cv_func_grantpt = yes && test $ac_cv_func_unlockpt = yes && test $ac_cv_func_ptsname = yes; then
+    rjk_cv_pty_how=unix98
+  elif test $rjk_gv_openpty = yes; then
+    rjk_cv_pty_how=bsd
+  else
+    rjk_cv_pty_how=unknown
+  fi
+])
+case $rjk_cv_pty_how in
+unix98 )
+  AC_DEFINE([PTY_UNIX98],[1],[define to use Unix98 pseudo-terminals])
+  ;;
+bsd )
+  AC_DEFINE([PTY_BSD],[1],[define to use BSD pseudo-terminals])
+  ;;
+unknown )
+  AC_MSG_ERROR([no idea how to acquire a pty on this platform])
+  ;;
+esac
+AM_CONDITIONAL([SETUID],[test $rjk_cv_pty_how = bsd])
+
 if test "x$GCC" = xyes; then
   # a reasonable default set of warnings
   CC="${CC} -Wall -W -Wpointer-arith -Wbad-function-cast \

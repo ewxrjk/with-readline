@@ -2,6 +2,23 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-12 18:55:17 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-5
+
+    Summary:
+      more hassle-free BSD support
+    Revision:
+      with-readline--dev--0--patch-5
+
+    * configure.ac: choose pty acquisition method here rather than
+      with-readline.h.  Also decide whether to make the executable setuid.
+    * with-readline.h: no longer decide pty acquisition here.
+    * Makefile.am: make installed executable setuid on BSD.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 Makefile.am configure.ac
+     with-readline.h
+
+
 2005-03-12 18:36:33 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-4
 
     Summary:

@@ -28,4 +28,10 @@ man_MANS=with-readline.1
 
 EXTRA_DIST=ChangeLog.d $(man_MANS)
 
+install-exec-hook:
+if SETUID
+	chown 0:0 $(DESTDIR)$(bindir)/with-readline$(EXEEXT)
+	chmod 4555 $(DESTDIR)$(bindir)/with-readline$(EXEEXT)
+endif
+
 # arch-tag:UzftHuacSCXqQdpEMXpLmQ
