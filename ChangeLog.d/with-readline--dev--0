@@ -2,6 +2,21 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-13 14:24:46 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-9
+
+    Summary:
+      AIX support
+    Revision:
+      with-readline--dev--0--patch-9
+
+    * configure.ac: Move check for libcurses to the right place
+                    AIX doesn't like I_PUSH calls either.
+                    Determine PTMX_PATH here (AIX has to be different).
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 configure.ac with-readline.h
+
+
 2005-03-13 14:05:08 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-8
 
     Summary:

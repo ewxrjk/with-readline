@@ -64,10 +64,6 @@ extern int debugging;
 
 void make_terminal(int *ptmp, int *ptsp, char **slavep);
 
-#ifndef PTMX_PATH
-# define PTMX_PATH "/dev/ptmx"
-#endif
-
 #ifndef WCOREDUMP
 # define WCOREDUMP(W) ((W) & 0x80)
 #endif

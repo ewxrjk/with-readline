@@ -27,7 +27,7 @@ AM_CONFIG_HEADER([config.h])
 
 AC_CANONICAL_HOST
 case "$host_os" in
-linux* )
+linux* | aix* )
   # I'm not sure what a good test for this would be.  AFAICT you just have
   # to know.  The alternative would be to ignore EINVAL from the I_PUSH
   # calls but I'm loathe to throw away errors.
@@ -48,10 +48,10 @@ AC_DEFINE(_GNU_SOURCE, 1, [required for e.g. strsignal])
 # Checks for libraries.
 # We save up a list of missing libraries that we can't do without
 # and report them all at once.
+AC_CHECK_LIB([curses], [tputs])
 AC_CHECK_LIB([readline], [readline],
             [AC_SUBST(LIBREADLINE,[-lreadline])],
             [missing_libraries="$missing_libraries libreadline"])
-AC_CHECK_LIB([curses], [tputs])
 AC_CHECK_LIB([util], [openpty])
 
 if test ! -z "$missing_libraries"; then
@@ -93,6 +93,22 @@ AC_CACHE_CHECK([how to acquire a pseudo-terminal],[rjk_cv_pty_how],[
 case $rjk_cv_pty_how in
 unix98 )
   AC_DEFINE([PTY_UNIX98],[1],[define to use Unix98 pseudo-terminals])
+  AC_CACHE_CHECK([path to pseudo-terminal multiplex device],[rjk_cv_ptmx],[
+    if test -c /dev/ptmx; then
+      # e.g. Linux, Solaris
+      rjk_cv_ptmx=/dev/ptmx
+    elif test -c /dev/ptc; then
+      # e.g. AIX
+      rjk_cv_ptmx=/dev/ptc
+    else
+      rjk_cv_ptmx=unknown
+    fi
+  ])
+  if test "x$rjk_cv_ptmx" = xunknown; then
+    AC_MSG_ERROR([cannot find pseudo-terminal multiplex device])
+  fi
+  AC_DEFINE_UNQUOTED([PTMX_PATH],["$rjk_cv_ptmx"],
+                     [define to the path to the pseudo-terminal multiplex device])
   ;;
 bsd )
   AC_DEFINE([PTY_BSD],[1],[define to use BSD pseudo-terminals])
