@@ -157,8 +157,8 @@ int main(int argc, char **argv) {
 
   /* we might be setuid/setgid at this point */
 
-  /* parse command line */
-  while((n = getopt_long(argc, argv, "hVa:", options, 0)) >= 0) {
+  /* parse command line; initial '+' means not to reorder options */
+  while((n = getopt_long(argc, argv, "+hVa:", options, 0)) >= 0) {
     switch(n) {
     case 'a': app = optarg; break;
     case 'h': help();

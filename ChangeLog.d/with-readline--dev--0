@@ -2,6 +2,21 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-16 22:37:17 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-22
+
+    Summary:
+      fix option parsing
+    Revision:
+      with-readline--dev--0--patch-22
+
+    * with-readline.c: prevent getopt_long() from reordering options
+    * with-readline.1: remove note about -- as it is no longer required
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 with-readline.1
+     with-readline.c
+
+
 2005-03-16 22:34:01 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-21
 
     Summary:

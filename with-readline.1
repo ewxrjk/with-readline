@@ -21,7 +21,6 @@ with-readline \- readline frontend for arbitrary programs
 .SH SYNOPSIS
 .B with-readline
 .RI [OPTIONS]
-.B --
 .I COMMAND
 .IR ARGS ...
 .SH DESCRIPTION
@@ -51,11 +50,6 @@ Display a usage message.
 .TP
 .B --version\fR, \fB-V
 Display the version string
-.TP
-.B --
-Marks the end of the options.  If you do not use this then you may get
-confusing results if there are any options in
-.IR ARGS .
 .SH PROMPTS
 .B with-readline
 has to deduce the application's prompt, if it has one, by monitoring
