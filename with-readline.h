@@ -75,6 +75,16 @@ void make_terminal(int *ptmp, char **slavep);
 const char *strsignal(int);
 #endif
 
+struct buffer {
+  char *base, *start, *end, *top;
+};
+
+void buffer_init(struct buffer *b);
+void buffer_append(struct buffer *b, const void *ptr, size_t n);
+void buffer_clear(struct buffer *b);
+
+int buffer_write(struct buffer *b, int fd);
+
 #endif /* WITH_READLINE_H */
 
 /*

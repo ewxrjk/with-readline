@@ -2,6 +2,25 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-16 22:34:01 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-21
+
+    Summary:
+      buffer type
+    Revision:
+      with-readline--dev--0--patch-21
+
+    * buffer.c: buffer type
+    * with-readline.c: use buffer type
+    * design.txt: notes for how I'm going to make this actually work properly
+
+    new files:
+     buffer.c design.txt
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 Makefile.am with-readline.c
+     with-readline.h
+
+
 2005-03-15 19:34:19 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-20
 
     Summary:

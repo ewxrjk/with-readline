@@ -21,7 +21,7 @@
 bin_PROGRAMS=with-readline
 
 with_readline_SOURCES=with-readline.c pty-unix98.c pty-bsd.c util.c	\
-with-readline.h getopt.h
+with-readline.h getopt.h buffer.c
 with_readline_LDADD=$(LIBOBJS) $(LIBREADLINE)
 
 man_MANS=with-readline.1

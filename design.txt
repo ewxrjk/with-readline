@@ -1,0 +1,98 @@
+How with-readline works
+=======================
+
+Readline started from an idea by Tony Finch, but has become quite
+complicated.
+
+Many programs enter an interactive mode if their input is a terminal
+and a noninteractive mode otherwise.  In such cases with-readline
+always wants the interactive mode.  Therefore it makes a
+pseudo-terminal to communicate with the command.
+
+It then needs to do the following three things concurrently:
+
+ * monitor the command's output to its terminal, which it sees as
+   input on the pty master fd.  It transmits this to its own output
+   and records the most recent line to use as the pty.
+
+ * monitor signals, e.g. (at least) SIGWINCH
+
+ * monitor keyboard input and pass it to Readline, possibly
+   intercepting some of it (e.g. INTR and QUIT) and passing it
+   straight to the command.
+
+Readline insists that its get character callback block if no input is
+available (and even using its callback-based interface calls it more
+than once per invocation so even though that might be convenient to
+use for other reasons does not solve our concurrency problem).
+Annoyingly I only discovered this part way through implementation.
+
+I initially wondered about using a subprocess or thread to be able to
+monitor the pty master fd while readline was blocking but then came up
+with an alternative idea.
+
+The idea then is to run the event loop both inside and outside the get
+character callback.  If it is inside it then any input characters
+(that are not intercepted) must be returned to Readline.  If it is
+inside it then it must invoke Readline and arrange for the next call
+to return the most recently read character.
+
+This implies:
+
+ * an event loop function which returns either at EOF or when a
+   character is available to pass to readline
+
+ * an outer loop which calls the event loop and invokes readline if it
+   is told a character is available
+
+ * a get character callback which first invokes the event loop if no
+   character is available, and (in any case) returns the character
+   read (or EOF indication).
+
+Ian Jackson suggested using SIGTTIN to notice when the command was
+ready to receive input.  The advantage of this would be that input was
+not echoed at all until the prompt was printed; type-ahead and
+INTR/QUIT propagation can still both be made to work simultaneously by
+buffering keyboard input and dumping it on Readline all at once.
+
+So add to the above a buffer of characters to return to readline.  The
+outer loop invokes the event loop if the buffer is empty and readline
+otherwise.  The get character callback invokes the event loop until
+the buffer is nonempty and then returns the next character in the
+buffer.
+
+Terminal Settings
+=================
+
+Since with-readline wants to select on input at all times, input had
+better not be in cooked mode.  So it puts the terminal into raw mode
+immediately and deny Readline the chance of changing this off its own
+bat.
+
+Window Size Handling
+====================
+
+Mostly this is easy: when our window changes size SIGWINCH is
+received.  The new size is queried and pass it on to the command.
+
+The wrinkle is that if our window changes size while the process is
+suspended then it doesn't get to see the SIGWINCH (only one process
+group gets the signal).  So it needs to make sure this happens after
+we continued too.  It's probably polite to only propagate the size
+change if it is indeed changed.
+
+Job Control
+===========
+
+Readline normally catches the stop signals and de- and re- configures
+the terminal around them.  However as described above it has been
+denied the ability to do this.  Also this strategy can't work with
+SIGSTOP.  Therefore:
+
+ * SIGCONT should restore terminal settings and check window size
+
+ * the shell is expected to sort out its own terminal settings
+
+
+
+# arch-tag:hhbNnL6jYYOPmQLoI0jUMA

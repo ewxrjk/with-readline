@@ -148,12 +148,12 @@ int main(int argc, char **argv) {
   fd_set fds;
   struct winsize w;
   struct termios original_termios, t;
-  char buf[4096], *line = 0;
+  char buf[4096];
   pid_t pid, r;
-  size_t lspace = 0, llen = 0;
   struct sigaction sa;
   unsigned char sig, ch;
   const char *ptr, *app =0;
+  struct buffer line;
 
   /* we might be setuid/setgid at this point */
 
@@ -238,6 +238,7 @@ int main(int argc, char **argv) {
       /* replace rl_getc with our own function for fine-grained control over
        * input */
       rl_getc_function = getc_callback;
+      buffer_init(&line);
       while(ptm != -1) {
         FD_ZERO(&fds);
         max = 0;
@@ -283,9 +284,10 @@ int main(int argc, char **argv) {
           readline_getc_result = ch;
           if(!readline_callback_installed) {
             rl_already_prompted = 1;
-            rl_callback_handler_install(llen ? line : "", read_line_callback);
+            buffer_append(&line, "", 1); /* null terminator */
+            rl_callback_handler_install(line.start, read_line_callback);
             readline_callback_installed = 1;
-            llen = 0;
+            buffer_clear(&line);
           }
           rl_callback_read_char();      /* input is available */
           if(ptm == -1) break;          /* might get closed */
@@ -304,18 +306,16 @@ int main(int argc, char **argv) {
             case 0: break;
             default: fatal(err, "error writing to master");
             }
-            /* figure out the output line so far */
+            /* figure out the output line so far.  If there is a newline in the
+             * current input then it is the start of a new line; throw away the
+             * old line and start from just after it. */
             for(ptr = buf + n; ptr > buf && ptr[-1] != '\n'; --ptr)
               ;
-            if(ptr != buf) llen = 0;    /* new line */
-            n -= (ptr - buf);
-            while(lspace < llen + n + 1)
-              if(!(lspace = lspace ? 2 * lspace : 1))
-                fatal(0, "insufficient memory");
-            line = xrealloc(line, lspace);
-            memcpy(line + llen, ptr, n);
-            llen += n;
-            line[llen] = 0;
+            if(ptr != buf) {
+              buffer_clear(&line);
+              n -= (ptr - buf);
+            }
+            buffer_append(&line, ptr, n);
           }
           /* the bytes read will be whatever we sent down ptm lately, we just
            * discard them */
