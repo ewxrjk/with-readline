@@ -117,8 +117,9 @@ job control.
 
 ^U and ^V are used by Readline.
 
-XXX ^S and ^Q.  Determine the current behaviour, decide whether this
-is sane, if not see how it can be improved.
+^S and ^Q aren't handled specially.  If we get them then we pass them
+on to Readline, if they are processed by the kernel then they have
+their usual effect.
 
 Using SIGTTIN
 =============
