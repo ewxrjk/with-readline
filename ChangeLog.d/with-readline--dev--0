@@ -2,6 +2,20 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-26 15:24:32 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-30
+
+    Summary:
+      documentation updates
+    Revision:
+      with-readline--dev--0--patch-30
+
+    * design.txt: add an incomplete section about special keys
+    * with-readline.1: add a list of diagnostics
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 design.txt with-readline.1
+
+
 2005-03-25 19:09:51 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-29
 
     Summary:

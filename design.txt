@@ -79,8 +79,8 @@ received.  The new size is queried and pass it on to the command.
 The wrinkle is that if our window changes size while the process is
 suspended then it doesn't get to see the SIGWINCH (only one process
 group gets the signal).  So it needs to make sure this happens after
-we continued too.  It's probably polite to only propagate the size
-change if it is indeed changed.
+with-readline is continued too.  It's probably polite to only
+propagate the size change if it is indeed changed.
 
 Job Control
 ===========
@@ -93,6 +93,32 @@ SIGSTOP.  Therefore:
  * SIGCONT should restore terminal settings and check window size
 
  * the shell is expected to sort out its own terminal settings
+
+Special Keys
+============
+  
+Special keys are handled as follows:
+
+^D is intercepted by Readline.  Normally it means to delete the next
+character but it provokes readline() to return NULL if the line is
+empty (i.e. to mimic the normal behaviour).  with-readline reacts by
+sending the EOF character to the subprocess.  Thus if the subprocess
+likes to read beyond EOF, it retains the opportunity to do so.
+
+^C and ^\ is intercepted by with-readline and sent straight to the
+subprocess even if it is in the middle of a line.  Possibly it should
+also discard the current line?  Usually the point is moot as the
+subprocess will terminate.  (The reason for sending them on as
+characters is to allow it to retain the same control over these keys
+it already had.)
+
+Neither with-readline nor Readline intercept ^Z.  See above regarding
+job control.
+
+^U and ^V are used by Readline.
+
+XXX ^S and ^Q.  Determine the current behaviour, decide whether this
+is sane, if not see how it can be improved.
 
 Using SIGTTIN
 =============

@@ -70,6 +70,38 @@ signal then
 .B with-readline
 will report this to standard error and exit with a status of
 .RI 128+ signal .
+.SH DIAGNOSTICS
+Most error messages just indicate some library function failed.  A few
+deserve more detailed explanation.  They usually mean either that
+.B with-readline
+has been installed incorrectly or not fully ported to the host
+platform.
+.TP
+.B "real and effective group IDs do not match"
+.TP
+.B "failed to surrender priviliged group ID"
+.TP
+.B "real and effective user IDs do not match"
+.TP
+.B "failed to surrender priviliged user ID"
+These messages only appear if
+.B with-readline
+is setuid or setgid, and indicate that something went wrong trying to
+surrender privilege.  This should "never happen".
+.TP
+.B "cannot parse wait status 0xNNNN"
+This indicates that the command reported a wait status that
+.B with-readline
+did not know how to interpret.
+.TP
+.B "/dev/XYZ has insecure mode 0NNNNN"
+.TP
+.B "/dev/XYZ has owner NNN, but we are running as UID NNN"
+These messages can appear if the pseudo-terminal created by
+.B with-readline
+has unsuitable permissions for secure operation.  For instance, on
+some platforms it needs to be installed setuid to root to properly
+acquire a pty and if it is not then this problem can arise.
 .SH "SEE ALSO"
 .BR readline (3)
 .PP
