@@ -2,6 +2,20 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-13 12:04:41 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-6
+
+    Summary:
+      set-id fixes
+    Revision:
+      with-readline--dev--0--patch-6
+
+    * with-readline.c: Remember to surrender set-id even when not making a pty
+                       Move terminal settings pickup to after surrender
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 with-readline.c
+
+
 2005-03-12 18:55:17 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-5
 
     Summary:

@@ -114,6 +114,7 @@ int main(int argc, char **argv) {
   char buf[4096];
   pid_t pid, r;
 
+  /* parse command line */
   while((n = getopt_long(argc, argv, "hV", options, 0)) >= 0) {
     switch(n) {
     case 'h': help();
@@ -124,15 +125,15 @@ int main(int argc, char **argv) {
   if(optind == argc) fatal(0, "no command specified");
   /* if stdin is not a tty then just go straight to the command */
   if(isatty(0)) {
+    /* create the terminal */
+    make_terminal(&ptm, &ptspath);
+    surrender_privilege();
     /* get old terminal settings */
     if(tcgetattr(0, &t) < 0)
       fatal(errno, "error calling tcgetattr");
     if(ioctl(0, TIOCGWINSZ, &w) < 0)
       fatal(errno, "error calling ioctl TIOCGWINSZ");
     if(pipe(p) < 0) fatal(errno, "error creating pipe");
-    /* create the terminal */
-    make_terminal(&ptm, &ptspath);
-    surrender_privilege();
     switch(pid = fork()) {
     case -1: fatal(errno, "error calling fork");
 
@@ -209,7 +210,8 @@ int main(int argc, char **argv) {
       /* fall through to execution */
       break;
     }
-  }
+  } else
+    surrender_privilege();
   execvp(argv[optind], &argv[optind]);
   fatal(errno, "error executing %s", argv[optind]);
 }
