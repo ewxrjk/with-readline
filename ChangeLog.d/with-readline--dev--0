@@ -2,6 +2,20 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-13 18:01:54 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-15
+
+    Summary:
+      readline interfacing fixes
+    Revision:
+      with-readline--dev--0--patch-15
+
+    * with-readline.c: set Readline application name.  Tell Readline about
+      window size changes.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 with-readline.c
+
+
 2005-03-13 17:52:26 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-14
 
     Summary:

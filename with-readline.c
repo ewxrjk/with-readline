@@ -136,11 +136,12 @@ int main(int argc, char **argv) {
   fd_set fds;
   struct winsize w;
   struct termios t;
-  char buf[4096], *line = 0, *ptr;
+  char buf[4096], *line = 0;
   pid_t pid, r;
   size_t lspace = 0, llen = 0;
   struct sigaction sa;
   unsigned char sig;
+  const char *ptr;
 
   /* we might be setuid/setgid at this point */
 
@@ -164,17 +165,30 @@ int main(int argc, char **argv) {
      */
     make_terminal(&ptm, &parentpts, &ptspath);
     surrender_privilege();
+    /* set app name for Readline */
+    if((ptr = strrchr(argv[optind], '/'))) ++ptr;
+    else ptr = argv[optind];
+    rl_readline_name = ptr;
+    /* we'll have our own SIGWINCH handler */
+    rl_catch_sigwinch = 0;
+    /* we'll handle signals by writing the signal number into a pipe, so they
+     * can be easily picked up by the event loop */
     if(pipe(sigpipe) < 0) fatal(errno, "error creating pipe");
     sa.sa_handler = sighandler;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
     if(sigaction(SIGWINCH, &sa, 0) < 0)
       fatal(errno, "error installing SIGWINCH handler");
-    /* get old terminal settings */
+    /* get old terminal settings; later on we'll apply these to the subsiduary
+     * terminal */
     if(tcgetattr(0, &t) < 0)
       fatal(errno, "error calling tcgetattr");
     if(ioctl(0, TIOCGWINSZ, &w) < 0)
       fatal(errno, "error calling ioctl TIOCGWINSZ");
+    /* the child will tell the parent that it has completed initialiazation by
+     * closing the this pipe.  The idea is to ensure that when there are no
+     * open instances of the sl ave, this is definitely because the command
+     * (and its descendants) closed it.  */
     if(pipe(p) < 0) fatal(errno, "error creating pipe");
     switch(pid = fork()) {
     case -1: fatal(errno, "error calling fork");
@@ -266,6 +280,8 @@ int main(int argc, char **argv) {
               fatal(errno, "error calling ioctl TIOCGWINSZ");
             if(ioctl(ptm, TIOCSWINSZ, &w) < 0)
               fatal(errno, "error calling ioctl TIOSGWINSZ");
+            rl_resize_terminal();
+            break;
           }
         }
       }
