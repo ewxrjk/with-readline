@@ -80,6 +80,7 @@ AC_CHECK_FUNCS([getopt_long],[:],[
   AC_LIBOBJ(getopt1)
 ])
 AC_CHECK_FUNCS([grantpt unlockpt ptsname openpty])
+AC_REPLACE_FUNCS([strsignal])
 
 AC_CACHE_CHECK([how to acquire a pseudo-terminal],[rjk_cv_pty_how],[
   if test $ac_cv_func_grantpt = yes && test $ac_cv_func_unlockpt = yes && test $ac_cv_func_ptsname = yes; then

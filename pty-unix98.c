@@ -34,7 +34,7 @@ void make_terminal(int *ptmp, int *ptsp, char **slavep) {
     fatal(errno, "error calling unlockpt for %s", slave);
   if((pts = open(slave, O_RDWR|O_NOCTTY, 0)) < 0)
     fatal(errno, "error opening %s", slave);
-#if I_PUSH && ! NO_STREAMS
+#if defined I_PUSH && ! NO_STREAMS
   if(ioctl(pts, I_PUSH, "ptem") < 0)
     fatal(errno, "error pushing ptem module");
   if(ioctl(pts, I_PUSH, "ldterm") < 0)

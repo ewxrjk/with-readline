@@ -68,6 +68,10 @@ void make_terminal(int *ptmp, int *ptsp, char **slavep);
 # define WCOREDUMP(W) ((W) & 0x80)
 #endif
 
+#if ! HAVE_STRSIGNAL
+const char *strsignal(int);
+#endif
+
 #endif /* WITH_READLINE_H */
 
 /*
