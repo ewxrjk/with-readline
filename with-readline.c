@@ -21,9 +21,13 @@
 #include "with-readline.h"
 
 static int ptm;                         /* master pty fd */
-static int readline_callback_installed; /* callback installed? */
 static int sigpipe[2];                  /* signal notifications */
-static int readline_getc_result = EOF;  /* saved character */
+
+static struct termios original_termios; /* original keyboard settings */
+static struct termios reading_termios;  /* in-use keyboard settings */
+
+static struct buffer input;             /* keyboard input */
+static struct buffer line;              /* latest line */
 
 static const struct option options[] = {
   { "application", required_argument, 0, 'a' },
@@ -75,26 +79,6 @@ static int do_write(int fd, const char *s) {
   return do_writen(fd, s, strlen(s));
 }
 
-/* called with input lines (or eof indicator) */
-static void read_line_callback(char *s) {
-  int err;
-
-  if(s) {
-    /* record line in history if nonempty */
-    if(*s) add_history(s);
-    /* pass input to slave reader */
-    if((err = do_write(ptm, s))
-       || (err = do_write(ptm, "\r")))
-      fatal(err, "error writing to pty master");
-    rl_callback_handler_remove();
-    readline_callback_installed = 0;
-  } else {
-    /* close master so that slave reader gets EOF */
-    xclose(ptm);
-    ptm = -1;
-  }
-}
-
 /* dispose of setgid/setuid bit */
 static void surrender_privilege(void) {
   gid_t egid;
@@ -132,28 +116,130 @@ static void sighandler(int sig) {
   errno = save;
 }
 
-static int getc_callback(FILE attribute((unused)) *fp) {
-  int ch;
+/* run an iteration of the event loop */
+static void eventloop(void) {
+  fd_set fds;
+  int max, n, err;
+  unsigned char ch, sig;
+  const char *ptr;
+  char buf[4096];
+  struct winsize w;
 
-  if((ch = readline_getc_result) == EOF)
-    fatal(0, "read character callback called in wrong state");
-  readline_getc_result = EOF;
-  return ch;
+  if(ptm == -1) return;
+  
+  FD_ZERO(&fds);
+  max = 0;
+#define addfd(FD) do {                          \
+  FD_SET((FD), &fds);                           \
+  if((FD) > max) max = (FD);                    \
+} while(0);
+  addfd(0);                             /* await input */
+  addfd(ptm);                           /* to detect slaves closing */
+  addfd(sigpipe[0]);
+  n = select(max + 1, &fds, 0, 0, 0);
+  if(n < 0) {
+    if(errno == EINTR)
+      return;
+    fatal(errno, "error calling select");
+  }
+  if(FD_ISSET(0, &fds)) {
+    /* Read a single character.  We could read many characters, parse out the
+     * special characters, and dribble the remainder into readline, but we only
+     * have to keep up with a human typist so the extra effort doesn't seem
+     * worthwhile. */
+    n = read(0, &ch, 1);
+    if(n < 0) {
+      if(errno == EINTR) return;
+      fatal(errno, "error reading from standard input");
+    }
+    if(n == 0) {                        /* no more stdin */
+      xclose(ptm);
+      ptm = -1;
+      return;
+    }
+    /* check for interrupting characters and send them straight on to the
+     * command. */
+    if(ch == original_termios.c_cc[VINTR]
+       || ch == original_termios.c_cc[VQUIT]) {
+      if((err = do_writen(ptm, &ch, 1)))
+        fatal(err, "error writing to master");
+      return;
+    }
+    /* store the character for later use by readline */
+    buffer_append(&input, &ch, 1);
+    return;
+  }
+  if(FD_ISSET(ptm, &fds)) {
+    n = read(ptm, buf, sizeof buf);
+    if(n < 0) {
+      if(errno == EIO) {
+        xclose(ptm);
+        ptm = -1;
+        return;
+      }
+      if(errno == EINTR) return;
+      fatal(errno, "error reading master");
+    } else if(!n) {
+      xclose(ptm);
+      ptm = -1;
+      return;
+    } else {
+      if((err = do_writen(1, buf, n)))
+        fatal(err, "error writing to master");
+      /* figure out the output line so far.  If there is a newline in the
+       * current input then it is the start of a new line; throw away the
+       * old line and start from just after it. */
+      for(ptr = buf + n; ptr > buf && ptr[-1] != '\n'; --ptr)
+        ;
+      if(ptr != buf) {
+        buffer_clear(&line);
+        n -= (ptr - buf);
+      }
+      buffer_append(&line, ptr, n);
+    }
+    /* the bytes read will be whatever we sent down ptm lately, we just
+     * discard them */
+  }
+  if(FD_ISSET(sigpipe[0], &fds)) {
+    n = read(sigpipe[0], &sig, 1);
+    if(n < 0) {
+      if(errno != EINTR) fatal(errno, "error reading from signal pipe");
+    } else if(!n) fatal(0, "signal pipe unexpectedly reached EOF");
+    switch(sig) {
+    case SIGWINCH:
+      /* propagate window size changes */
+      if(ioctl(0, TIOCGWINSZ, &w) < 0)
+        fatal(errno, "error calling ioctl TIOCGWINSZ");
+      if(ioctl(ptm, TIOCSWINSZ, &w) < 0)
+        fatal(errno, "error calling ioctl TIOSGWINSZ");
+      rl_resize_terminal();
+      break;
+    case SIGCONT:
+      /* XXX consider also window size change */
+      if(tcsetattr(0, TCSANOW, &reading_termios) < 0)
+        fatal(errno, "error calling tcsetattr");
+      break;
+    }
+  }
+}
+
+static int getc_callback(FILE attribute((unused)) *fp) {
+  /* wait until a character is available */
+  while(ptm != -1 && input.start == input.end)
+    eventloop();
+  if(ptm == -1) return EOF;
+  return *input.start++;
 }
 
 int main(int argc, char **argv) {
-  int n, pts, p[2], err, max;
-  char *ptspath;
+  int n, pts, p[2], err;
+  char *ptspath, *prompt, *s;
   FILE *tty;
-  fd_set fds;
   struct winsize w;
-  struct termios original_termios, t;
   char buf[4096];
   pid_t pid, r;
   struct sigaction sa;
-  unsigned char sig, ch;
-  const char *ptr, *app =0;
-  struct buffer line;
+  const char *app =0;
 
   /* we might be setuid/setgid at this point */
 
@@ -224,127 +310,45 @@ int main(int argc, char **argv) {
       rl_outstream = tty;
       rl_prep_terminal(1);              /* want key at a time mode always */
       /* disable INTR and QUIT, since we want to pass them through the pty. */
-      if(tcgetattr(0, &t) < 0)
+      if(tcgetattr(0, &reading_termios) < 0)
         fatal(errno, "error calling tcgetattr");
-      t.c_cc[VINTR] = t.c_cc[VQUIT] = 0;
-      if(tcsetattr(0, TCSANOW, &t) < 0)
+      reading_termios.c_cc[VINTR] = reading_termios.c_cc[VQUIT] = 0;
+      if(tcsetattr(0, TCSANOW, &reading_termios) < 0)
         fatal(errno, "error calling tcsetattr");
-      /* XXX we don't handle SUSP yet. */
-      /* stop rl_callback_handler_install/remove from fiddling with terminal
-       * settings.  Readline documentation suggests we can set these to 0, but
-       * it is a lying toad: this is not so (at least in 4.3).  */
+      /* stop readline from fiddling with terminal settings.  Readline
+       * documentation suggests we can set these to 0, but it is a lying toad:
+       * this is not so (at least in 4.3).  */
       rl_prep_term_function = prep_nop;
       rl_deprep_term_function = deprep_nop;
       /* replace rl_getc with our own function for fine-grained control over
        * input */
       rl_getc_function = getc_callback;
-      buffer_init(&line);
       while(ptm != -1) {
-        FD_ZERO(&fds);
-        max = 0;
-#define addfd(FD) do {                          \
-  FD_SET((FD), &fds);                           \
-  if((FD) > max) max = (FD);                    \
-} while(0);
-        addfd(0);                       /* await input */
-        addfd(ptm);                     /* to detect slaves closing */
-        addfd(sigpipe[0]);
-        n = select(max + 1, &fds, 0, 0, 0);
-        if(n < 0) {
-          if(errno == EINTR)
-            continue;
-          fatal(errno, "error calling select");
-        }
-        if(FD_ISSET(0, &fds)) {
-          /* Read a single character.  We could read many characters, parse out
-           * the special characters, and dribble the remainder into readline,
-           * but we only have to keep up with a human typist so the extra
-           * effort doesn't seem worthwhile. */
-          n = read(0, &ch, 1);
-          if(n < 0) {
-            if(errno == EINTR) continue;
-            fatal(errno, "error reading from standard input");
-          }
-          if(n == 0) {                  /* no more stdin */
-            xclose(ptm);
-            ptm = -1;
-            break;
-          }
-          /* check for interrupting characters and send them straight on to the
-           * command. */
-          if(ch == original_termios.c_cc[VINTR]
-             || ch == original_termios.c_cc[VQUIT]) {
-            switch(err = do_writen(ptm, &ch, 1)) {
-            case 0: break;
-            default: fatal(err, "error writing to master");
-            }
-            continue;
-          }
-          /* pass the character to readline */
-          readline_getc_result = ch;
-          if(!readline_callback_installed) {
-            rl_already_prompted = 1;
-            buffer_append(&line, "", 1); /* null terminator */
-            rl_callback_handler_install(line.start, read_line_callback);
-            readline_callback_installed = 1;
-            buffer_clear(&line);
-          }
-          rl_callback_read_char();      /* input is available */
-          if(ptm == -1) break;          /* might get closed */
-        }
-        if(FD_ISSET(ptm, &fds)) {
-          n = read(ptm, buf, sizeof buf);
-          if(n < 0) {
-            if(errno == EIO) break;     /* no more slaves */
-            if(errno == EINTR) continue;
-            fatal(errno, "error reading master");
-          } else if(!n)
-            break;                      /* no more slaves */
-          else {
-            err = do_writen(1, buf, n);
-            switch(err) {
-            case 0: break;
-            default: fatal(err, "error writing to master");
-            }
-            /* figure out the output line so far.  If there is a newline in the
-             * current input then it is the start of a new line; throw away the
-             * old line and start from just after it. */
-            for(ptr = buf + n; ptr > buf && ptr[-1] != '\n'; --ptr)
-              ;
-            if(ptr != buf) {
-              buffer_clear(&line);
-              n -= (ptr - buf);
-            }
-            buffer_append(&line, ptr, n);
-          }
-          /* the bytes read will be whatever we sent down ptm lately, we just
-           * discard them */
-        }
-        if(FD_ISSET(sigpipe[0], &fds)) {
-          n = read(sigpipe[0], &sig, 1);
-          if(n < 0) {
-            if(errno != EINTR) fatal(errno, "error reading from signal pipe");
-          } else if(!n) fatal(0, "signal pipe unexpectedly reached EOF");
-          switch(sig) {
-          case SIGWINCH:
-            /* propagate window size changes */
-            if(ioctl(0, TIOCGWINSZ, &w) < 0)
-              fatal(errno, "error calling ioctl TIOCGWINSZ");
-            if(ioctl(ptm, TIOCSWINSZ, &w) < 0)
-              fatal(errno, "error calling ioctl TIOSGWINSZ");
-            rl_resize_terminal();
-            break;
-          case SIGCONT:
-            /* consider also window size change */
-            if(tcsetattr(0, TCSANOW, &t) < 0)
-              fatal(errno, "error calling tcsetattr");
-            break;
+        eventloop();                    /* wait for something to happen */
+        if(input.start != input.end) {
+          /* there is input.  We copy the prompt since line might be modified
+           * while still reading. */
+          if(!(prompt = malloc(line.end - line.start + 1)))
+            fatal(errno, "error calling malloc");
+          memcpy(prompt, line.start, line.end - line.start);
+          prompt[line.end - line.start] = 0;
+          buffer_clear(&line);          /* zap the saved line */
+          rl_already_prompted = 1;      /* command already printed prompt */
+          s = readline(prompt);         /* get a line */
+          free(prompt);
+          if(!s) {
+            /* send an EOF */
+            if((err = do_write(ptm, &original_termios.c_cc[VEOF])))
+              fatal(err, "error writing to pty master");
+          } else {
+            if(*s) add_history(s);
+            /* pass input to slave reader */
+            if((err = do_write(ptm, s))
+               || (err = do_write(ptm, "\r")))
+              fatal(err, "error writing to pty master");
+            free(s);
           }
         }
-      }
-      if(readline_callback_installed) {
-        rl_callback_handler_remove();
-        readline_callback_installed = 0;
       }
       rl_deprep_terminal();
       /* wait for the child to terminate so we can return its exit status */

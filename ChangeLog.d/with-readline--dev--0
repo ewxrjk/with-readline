@@ -2,6 +2,28 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-19 12:51:03 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-23
+
+    Summary:
+      redesign
+    Revision:
+      with-readline--dev--0--patch-23
+
+    * with-readline.c: move event loop around as described in design.txt: we
+      now wait for input until the user presses a key, then enter readline,
+      but return to the event loop from inside it so we can continue to
+      handle output from the subprocess.
+      Sequences of more than one input character now work properly.
+      We handle EOF by just sending the EOF character.  TIOCREMOTE might have
+      been better (or not?) but doesn't exist in Linux in any case.
+      All this means we're not using the callback interface to Readline any
+      more.  It is doing its own signal handling still however which might
+      not be right.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 with-readline.c
+
+
 2005-03-16 22:37:17 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-22
 
     Summary:
