@@ -1,0 +1,69 @@
+with-readline
+-------------
+
+with-readline allows readline editing to be applied to an arbitrary
+program without recompiling it.
+
+For example:
+
+  with-readline -- cat > foo
+
+allows you to write lines to the file 'foo', just as 'cat foo' would,
+except that you can edit lines and scroll up and down through history
+while doing so.
+
+It is currently a little rudimentary in that it does not cope
+specially with prompts, support private keymaps, long term history
+files or any number of other possibly useful features.
+
+I have tested with-readline on Linux and Mac OS X (Darwin).
+
+Installation
+------------
+
+  ./configure
+  make
+  make install
+
+You will need Readline installed.  If it is not in the default search
+paths then you must tell configure.  For instance on my Mac:
+
+  ./configure CPPFLAGS='-isystem /sw/include' LDFLAGS='-L/sw/lib'
+
+As ever see INSTALL for more information.
+
+Mailing Lists
+-------------
+
+http://www.chiark.greenend.org.uk/mailman/listinfo/sgo-software-announce
+ - new versions will be announced here
+
+http://www.chiark.greenend.org.uk/mailman/listinfo/sgo-software-discuss
+ - discussion and bug reports
+
+Copyright
+---------
+
+with-readline - apply Readline to arbitrary applications
+Copyright (C) 2005 Richard Kettlewell <rjk@greenend.org.uk>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+USA
+
+
+Local Variables:
+mode:text
+arch-tag:nWTsd/b4VF4r4eT9L9Q3iw
+End:

@@ -114,6 +114,8 @@ int main(int argc, char **argv) {
   char buf[4096];
   pid_t pid, r;
 
+  /* we might be setuid/setgid at this point */
+  
   /* parse command line */
   while((n = getopt_long(argc, argv, "hV", options, 0)) >= 0) {
     switch(n) {
@@ -125,7 +127,13 @@ int main(int argc, char **argv) {
   if(optind == argc) fatal(0, "no command specified");
   /* if stdin is not a tty then just go straight to the command */
   if(isatty(0)) {
-    /* create the terminal */
+    /* Create the terminal
+     *
+     * Why use a pseudo-terminal and not a pipe?  Some programs vary their
+     * behaviour depending on whether their standard input is a terminal or
+     * not, and when you're addressing a program from the keyboard you probably
+     * wanted the terminal behaviour.
+     */
     make_terminal(&ptm, &ptspath);
     surrender_privilege();
     /* get old terminal settings */

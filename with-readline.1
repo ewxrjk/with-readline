@@ -10,7 +10,30 @@ with-readline \- readline frontend for arbitrary programs
 .SH DESCRIPTION
 .B with-readline
 executes
-.B COMMAND
+.I COMMAND
 with Readline applied to its standard input.  This allows Readline's
 editing features to be applied even to programs not linked against it.
+.SH OPTIONS
+The following options are supported:
+.TP
+.B --help\fR, \fB-h
+Display a usage message.
+.TP
+.B --version\fR, \fB-V
+Display the version string
+.TP
+.B --
+Marks the end of the options.
+.SH "EXIT STATUS"
+If the command exits normally then
+.B with-readline
+will exit with the same status.  However if it is terminated by a
+signal then
+.B with-readline
+will report this to standard error and exit with a status of
+.RI 128+ signal .
+.SH "SEE ALSO"
+.BR readline (3)
+.PP
+The GNU Readlne Library documentation.
 .\" arch-tag:TbM3GaF2DXtSQBNh0cKifQ

@@ -26,7 +26,7 @@ with_readline_LDADD=$(LIBOBJS) $(LIBREADLINE)
 
 man_MANS=with-readline.1
 
-EXTRA_DIST=ChangeLog.d $(man_MANS)
+EXTRA_DIST=ChangeLog.d $(man_MANS) README
 
 install-exec-hook:
 if SETUID
