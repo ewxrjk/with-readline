@@ -1,3 +1,20 @@
+.\" This file is part of with-readline.
+.\" Copyright (C) 2005 Richard Kettlewell
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+.\" General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+.\" USA
 .TH with-readline 1
 .SH NAME
 with-readline \- readline frontend for arbitrary programs
@@ -16,6 +33,19 @@ editing features to be applied even to programs not linked against it.
 .SH OPTIONS
 The following options are supported:
 .TP
+.B --application \fIAPP\fR, \fB-a \fIAPP\fR
+Set the application name to
+.IR APP .
+This can be used in
+.IR ~/.inputrc .
+See the section
+.I "Conditional Init Constructs"
+in the GNU Readline manual for more details.
+.IP
+The default application name is the basename of the command.  For
+instance if the command is either "sftp" or "/usr/bin/sftp" then the
+application name will be "sftp".
+.TP
 .B --help\fR, \fB-h
 Display a usage message.
 .TP
@@ -23,7 +53,21 @@ Display a usage message.
 Display the version string
 .TP
 .B --
-Marks the end of the options.
+Marks the end of the options.  If you do not use this then you may get
+confusing results if there are any options in
+.IR ARGS .
+.SH PROMPTS
+.B with-readline
+has to deduce the application's prompt, if it has one, by monitoring
+the application's output.  The way it does this is to record the
+latest incomplete line (which might be a blank line) when the first
+keypress of each line is detected, and assume that that is the
+prompt.  When the user always waits for a prompt before typing this
+works well.
+.PP
+However if the user "types ahead" then it may guess incorrectly what
+the prompt is.  The result may be visually confusing, though not
+necessarily any more so than it would have been anyway.
 .SH "EXIT STATUS"
 If the command exits normally then
 .B with-readline
@@ -35,5 +79,5 @@ will report this to standard error and exit with a status of
 .SH "SEE ALSO"
 .BR readline (3)
 .PP
-The GNU Readlne Library documentation.
+The GNU Readline Library documentation.
 .\" arch-tag:TbM3GaF2DXtSQBNh0cKifQ

@@ -25,6 +25,7 @@ static int readline_callback_installed; /* callback installed? */
 static int sigpipe[2];                  /* signal notifications */
 
 static const struct option options[] = {
+  { "application", required_argument, 0, 'a' },
   { "help", no_argument, 0, 'h' },
   { "version", no_argument, 0, 'V' },
   { 0, 0, 0, 0 }
@@ -35,8 +36,9 @@ static void help(void) {
   xprintf("Usage:\n"
 	  "  with-readline [OPTIONS] -- COMMAND ARGS...\n"
 	  "Options:\n"
-	  "  --help, -h              Display usage message\n"
-	  "  --version, -V           Display version number\n");
+          "  --application APP, -a APP   Set application name\n"
+	  "  --help, -h                  Display usage message\n"
+	  "  --version, -V               Display version number\n");
   xfclose(stdout);
   exit(0);
 }
@@ -141,13 +143,14 @@ int main(int argc, char **argv) {
   size_t lspace = 0, llen = 0;
   struct sigaction sa;
   unsigned char sig;
-  const char *ptr;
+  const char *ptr, *app =0;
 
   /* we might be setuid/setgid at this point */
 
   /* parse command line */
-  while((n = getopt_long(argc, argv, "hV", options, 0)) >= 0) {
+  while((n = getopt_long(argc, argv, "hVa:", options, 0)) >= 0) {
     switch(n) {
+    case 'a': app = optarg; break;
     case 'h': help();
     case 'V': version();
     default: fatal(0, "invalid option");
@@ -166,9 +169,11 @@ int main(int argc, char **argv) {
     make_terminal(&ptm, &parentpts, &ptspath);
     surrender_privilege();
     /* set app name for Readline */
-    if((ptr = strrchr(argv[optind], '/'))) ++ptr;
-    else ptr = argv[optind];
-    rl_readline_name = ptr;
+    if(!app) {
+      if((app = strrchr(argv[optind], '/'))) ++app;
+      else app = argv[optind];
+    }
+    rl_readline_name = app;
     /* we'll have our own SIGWINCH handler */
     rl_catch_sigwinch = 0;
     /* we'll handle signals by writing the signal number into a pipe, so they
