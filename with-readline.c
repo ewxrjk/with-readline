@@ -54,7 +54,7 @@ static void version(void) {
   exit(0);
 }
 
-/* write a string to ptm */
+/* write a string to fd */
 static int do_writen(int fd, const char *s, size_t l) {
   size_t m = 0;
   int n;
@@ -70,7 +70,7 @@ static int do_writen(int fd, const char *s, size_t l) {
   return 0;
 }
 
-/* write a string to ptm */
+/* write a string to fd */
 static int do_write(int fd, const char *s) {
   return do_writen(fd, s, strlen(s));
 }
@@ -194,6 +194,8 @@ int main(int argc, char **argv) {
     sa.sa_flags = SA_RESTART;
     if(sigaction(SIGWINCH, &sa, 0) < 0)
       fatal(errno, "error installing SIGWINCH handler");
+    if(sigaction(SIGCONT, &sa, 0) < 0)
+      fatal(errno, "error installing SIGCONT handler");
     /* get old terminal settings; later on we'll apply these to the subsiduary
      * terminal */
     if(tcgetattr(0, &original_termios) < 0)
@@ -331,6 +333,11 @@ int main(int argc, char **argv) {
             if(ioctl(ptm, TIOCSWINSZ, &w) < 0)
               fatal(errno, "error calling ioctl TIOSGWINSZ");
             rl_resize_terminal();
+            break;
+          case SIGCONT:
+            /* consider also window size change */
+            if(tcsetattr(0, TCSANOW, &t) < 0)
+              fatal(errno, "error calling tcsetattr");
             break;
           }
         }
