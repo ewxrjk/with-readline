@@ -2,6 +2,25 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-30 19:38:14 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-37
+
+    Summary:
+      posix_openpt
+    Revision:
+      with-readline--dev--0--patch-37
+
+    * pty-unix98.c: use posix_openpt() instead of opening ptmx device
+      directly.
+    * posix_openpt.c: replacement posix_openpt() for platforms that lack it
+    * configure.ac: define _XOPEN_SOURCE and check for posix_openpt
+
+    new files:
+     posix_openpt.c
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 configure.ac pty-unix98.c
+
+
 2005-03-28 17:12:21 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-36
 
     Summary:

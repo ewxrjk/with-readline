@@ -20,25 +20,19 @@
 
 #include "with-readline.h"
 
-#if PTY_UNIX98
-void make_terminal(int *ptmp, char **slavep) {
-  int ptm, pts;
-  const char *slave;
+int posix_openpt(int flags) {
+  int fd;
 
-  if((ptm = posix_openpt(O_RDWR|O_NOCTTY)) < 0)
-    fatal(errno, "error calling posix_openpt");
-  slave = ptsname(ptm);
-  if(grantpt(ptm) < 0)
-    fatal(errno, "error calling grantpt for %s", slave);
-  if(unlockpt(ptm) < 0)
-    fatal(errno, "error calling unlockpt for %s", slave);
-  if((pts = open(slave, O_RDWR|O_NOCTTY, 0)) < 0)
-    fatal(errno, "error opening %s", slave);
-  *ptmp = ptm;
-  xclose(pts);
-  *slavep = xstrdup(slave);
-}
+  if((fd = open(PTMX_PATH, flags, 0)) < 0)
+    return -1;
+#if defined I_PUSH && ! NO_STREAMS
+  if(ioctl(pts, I_PUSH, "ptem") < 0)
+    return -1;
+  if(ioctl(pts, I_PUSH, "ldterm") < 0)
+    return -1;
 #endif
+  return fd;
+}
 
 /*
 Local Variables:
@@ -48,4 +42,4 @@ fill-column:79
 indent-tabs-mode:nil
 End:
 */
-/* arch-tag:UoEWQZXIvsH0CVHPm7L7nQ */
+/* arch-tag:2YD+9XLVHcaKM7DA05+y/w */

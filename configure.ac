@@ -19,9 +19,9 @@
 # USA
 #
 
-AC_INIT(with-readline, 0.1, richard+withreadline@sfere.greenend.org.uk)
+AC_INIT(with-readline, 0.1+, richard+withreadline@sfere.greenend.org.uk)
 AC_CONFIG_AUX_DIR([config.aux])
-AM_INIT_AUTOMAKE(with-readline, 0.1)
+AM_INIT_AUTOMAKE(with-readline, 0.1+)
 AC_CONFIG_SRCDIR([with-readline.c])
 AM_CONFIG_HEADER([config.h])
 
@@ -44,6 +44,7 @@ missing_headers=""
 missing_functions=""
 
 AC_DEFINE(_GNU_SOURCE, 1, [required for e.g. strsignal])
+AC_DEFINE(_XOPEN_SOURCE, 600, [required for e.g. posix_openpt])
 
 # Checks for libraries.
 # We save up a list of missing libraries that we can't do without
@@ -94,7 +95,7 @@ AC_CHECK_FUNCS([getopt_long],[:],[
 AC_CHECK_FUNCS([grantpt unlockpt ptsname openpty])
 AC_REPLACE_FUNCS([strsignal])
 
-AC_CACHE_CHECK([how to acquire a pseudo-terminal],[rjk_cv_pty_how],[
+AC_CACHE_CHECK([pseudo-terminal acquisition model],[rjk_cv_pty_how],[
   if test "$ac_cv_func_grantpt" = yes && test "$ac_cv_func_unlockpt" = yes && test "$ac_cv_func_ptsname" = yes; then
     rjk_cv_pty_how=unix98
   elif test "$ac_cv_func_openpty" = yes; then
@@ -105,10 +106,14 @@ AC_CACHE_CHECK([how to acquire a pseudo-terminal],[rjk_cv_pty_how],[
 ])
 case $rjk_cv_pty_how in
 unix98 )
+  AC_REPLACE_FUNCS([posix_openpt])
   AC_DEFINE([PTY_UNIX98],[1],[define to use Unix98 pseudo-terminals])
-  AC_CACHE_CHECK([path to pseudo-terminal multiplex device],[rjk_cv_ptmx],[
-    if test -c /dev/ptmx; then
-      # e.g. Linux, Solaris
+  AC_CACHE_CHECK([how to acquire a new master pseudo-terminal],[rjk_cv_ptmx],[
+    if test $ac_cv_func_posix_openpt = yes; then
+      # e.g. Linux, FreeBSD 5
+      rjk_cv_ptmx='use posix_openpt'
+    elif test -c /dev/ptmx; then
+      # e.g. Solaris, Linux before posix_openpt support
       rjk_cv_ptmx=/dev/ptmx
     elif test -c /dev/ptc; then
       # e.g. AIX
@@ -118,7 +123,7 @@ unix98 )
     fi
   ])
   if test "x$rjk_cv_ptmx" = xunknown; then
-    AC_MSG_ERROR([cannot find pseudo-terminal multiplex device])
+    AC_MSG_ERROR([cannot determine how to acquire a new pseudo-terminal master])
   fi
   AC_DEFINE_UNQUOTED([PTMX_PATH],["$rjk_cv_ptmx"],
                      [define to the path to the pseudo-terminal multiplex device])
