@@ -396,7 +396,7 @@ int main(int argc, char **argv) {
           free(prompt);
           if(!s) {
             /* send an EOF */
-            if((err = do_write(ptm, &original_termios.c_cc[VEOF])))
+            if((err = do_writen(ptm, &original_termios.c_cc[VEOF], 1)))
               fatal(err, "error writing to pty master");
           } else {
             if(*s) add_history(s);
