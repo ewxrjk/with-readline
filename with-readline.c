@@ -227,6 +227,7 @@ static void eventloop(void) {
       /* XXX consider also window size change */
       if(tcsetattr(0, TCSANOW, &reading_termios) < 0)
         fatal(errno, "error calling tcsetattr");
+      rl_resize_terminal();
       break;
     default:                            /* some fatal signal */
       if(tcsetattr(0, TCSANOW, &original_termios) < 0)
@@ -382,6 +383,7 @@ int main(int argc, char **argv) {
       /* replace rl_getc with our own function for fine-grained control over
        * input */
       rl_getc_function = getc_callback;
+      rl_initialize();
       while(ptm != -1) {
         eventloop();                    /* wait for something to happen */
         if(input.start != input.end) {

@@ -2,6 +2,20 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-19 23:30:37 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-27
+
+    Summary:
+      explicitly initialize readline
+    Revision:
+      with-readline--dev--0--patch-27
+
+    * with-readline.c: explicitly initialize readline; the manual says this
+      is "not strictly necessary" but it is not strictly accurate.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 with-readline.c
+
+
 2005-03-19 23:24:18 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-26
 
     Summary:
