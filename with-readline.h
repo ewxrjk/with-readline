@@ -30,6 +30,9 @@
 #if HAVE_UTIL_H
 # include <util.h>
 #endif
+#if HAVE_STROPTS_H
+# include <stropts.h>
+#endif
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -59,7 +62,7 @@ extern void (*exitfn)(int) attribute((noreturn));
 
 extern int debugging;
 
-void make_terminal(int *ptmp, char **slavep);
+void make_terminal(int *ptmp, int *ptsp, char **slavep);
 
 #ifndef PTMX_PATH
 # define PTMX_PATH "/dev/ptmx"

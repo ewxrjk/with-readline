@@ -21,20 +21,27 @@
 #include "with-readline.h"
 
 #if PTY_UNIX98
-
-void make_terminal(int *ptmp, char **slavep) {
-  int ptm;
+void make_terminal(int *ptmp, int *ptsp, char **slavep) {
+  int ptm, pts;
   const char *slave;
 
   if((ptm = open(PTMX_PATH, O_RDWR|O_NOCTTY, 0)) < 0)
-    fatal(errno, "%s", PTMX_PATH);
+    fatal(errno, "error opening %s", PTMX_PATH);
   slave = ptsname(ptm);
   if(grantpt(ptm) < 0)
-    fatal(errno, "grantpt %s", slave);
+    fatal(errno, "error calling grantpt for %s", slave);
   if(unlockpt(ptm) < 0)
-    fatal(errno, "unlockpt %s", slave);
+    fatal(errno, "error calling unlockpt for %s", slave);
+  if((pts = open(slave, O_RDWR|O_NOCTTY, 0)) < 0)
+    fatal(errno, "error opening %s", slave);
+#if I_PUSH && ! NO_STREAMS
+  if(ioctl(pts, I_PUSH, "ptem") < 0)
+    fatal(errno, "error pushing ptem module");
+  if(ioctl(pts, I_PUSH, "ldterm") < 0)
+    fatal(errno, "error pushing ldterm module");
+#endif
   *ptmp = ptm;
-			/* not open yet */
+  *ptsp = pts;
   *slavep = xstrdup(slave);
 }
 #endif

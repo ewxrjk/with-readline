@@ -51,7 +51,7 @@ static void version(void) {
 
 /* write a string to ptm */
 static int do_write(int fd, const char *s) {
-  size_t l = strlen(s), m = 0i;
+  size_t l = strlen(s), m = 0;
   int n;
 
   while(m < l) {
@@ -105,7 +105,7 @@ static void surrender_privilege(void) {
 }
 
 int main(int argc, char **argv) {
-  int n, pts, p[2];
+  int n, pts, parentpts, p[2];
   char *ptspath;
   FILE *tty;
   fd_set fds;
@@ -134,7 +134,7 @@ int main(int argc, char **argv) {
      * not, and when you're addressing a program from the keyboard you probably
      * wanted the terminal behaviour.
      */
-    make_terminal(&ptm, &ptspath);
+    make_terminal(&ptm, &parentpts, &ptspath);
     surrender_privilege();
     /* get old terminal settings */
     if(tcgetattr(0, &t) < 0)
@@ -150,6 +150,7 @@ int main(int argc, char **argv) {
       /* wait for child to open slave */
       xclose(p[1]);
       read(p[0], buf, 1);
+      xclose(parentpts);
       /* we always echo input to /dev/tty rather than whatever stdout or stderr
        * happen to be at the moment (it would be better to guarantee to use the
        * same terminal as stdin) */
@@ -207,6 +208,7 @@ int main(int argc, char **argv) {
       /* signal to parent that we have opened the slave */
       xclose(p[0]);
       xclose(p[1]);
+      xclose(parentpts);
       if(pts != 0) {
         if(dup2(pts, 0) < 0) fatal(errno, "error calling dup2");
         xclose(pts);

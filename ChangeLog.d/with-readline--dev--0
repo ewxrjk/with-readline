@@ -2,6 +2,27 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-13 14:05:08 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-8
+
+    Summary:
+      STREAMS support.
+    Revision:
+      with-readline--dev--0--patch-8
+
+    * configure.ac: Check for libcurses and <stropts.h>
+                    Suppress STREAMS ioctls on Linux
+    * pty-unix98.c: Push STREAMS modules onto slave pty.  We pass the slave
+                    FD back to the caller now, although it currently doesn't
+                    do much with it.
+    * pty-bsd.c: Pass back slave pty file descriptor.
+    * with-readline.c: Typo fix plus changes to support the above.
+    * with-readline.h: Include <stropts.h>.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 configure.ac pty-bsd.c
+     pty-unix98.c with-readline.c with-readline.h
+
+
 2005-03-13 12:24:49 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-7
 
     Summary:

@@ -25,6 +25,16 @@ AM_INIT_AUTOMAKE(with-readline, 0.unreleased)
 AC_CONFIG_SRCDIR([with-readline.c])
 AM_CONFIG_HEADER([config.h])
 
+AC_CANONICAL_HOST
+case "$host_os" in
+linux* )
+  # I'm not sure what a good test for this would be.  AFAICT you just have
+  # to know.  The alternative would be to ignore EINVAL from the I_PUSH
+  # calls but I'm loathe to throw away errors.
+  AC_DEFINE([NO_STREAMS],[1],[define for platforms that have UNIX 98 pseudo-terminals but don't use STREAMS])
+  ;;
+esac
+
 # Checks for programs.
 AC_PROG_CC
 AC_SET_MAKE
@@ -41,6 +51,7 @@ AC_DEFINE(_GNU_SOURCE, 1, [required for e.g. strsignal])
 AC_CHECK_LIB([readline], [readline],
             [AC_SUBST(LIBREADLINE,[-lreadline])],
             [missing_libraries="$missing_libraries libreadline"])
+AC_CHECK_LIB([curses], [tputs])
 AC_CHECK_LIB([util], [openpty])
 
 if test ! -z "$missing_libraries"; then
@@ -51,7 +62,7 @@ fi
 AC_CHECK_HEADERS([readline/readline.h], [:],[
   missing_headers="$missing_headers $ac_header"
 ])
-AC_CHECK_HEADERS([pty.h util.h])
+AC_CHECK_HEADERS([pty.h util.h stropts.h])
 if test ! -z "$missing_headers"; then
   AC_MSG_ERROR([missing headers:$missing_headers])
 fi
