@@ -51,6 +51,7 @@
 #include <termios.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <limits.h>
 
 #define xrealloc xrealloc_workaround_libutil
 
@@ -58,6 +59,7 @@ void xfclose(FILE *fp);
 int xprintf(const char *s, ...);
 char *xstrdup(const char *s);
 void xclose(int fd);
+void *xmalloc(size_t n);
 void *xrealloc(void *ptr, size_t n);
 
 void fatal(int errno_value, const char *fmt, ...)

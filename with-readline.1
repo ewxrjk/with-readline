@@ -29,6 +29,14 @@ executes
 .I COMMAND
 with Readline applied to its standard input.  This allows Readline's
 editing features to be applied even to programs not linked against it.
+.PP
+For example, one might make
+.BR sftp (1)
+use Readline by aliasing it with the following Bash command:
+.PP
+.nf
+alias sftp="with-readline sftp"
+.fi
 .SH OPTIONS
 The following options are supported:
 .TP
@@ -45,11 +53,20 @@ The default application name is the basename of the command.  For
 instance if the command is either "sftp" or "/usr/bin/sftp" then the
 application name will be "sftp".
 .TP
+.B --history \fIENTRIES\fR, \fB-H \fIENTRIES\fR
+Set the maximum number of history entries to record.  \fIENTRIES\fR
+must be a non-negative decimal integer.
+.IP
+If this option is not used then the environment variable
+\fBHISTFILESIZE\fR is consulted instead.
+.IP
+If that is not set then the default size is 500 entries.
+.TP
 .B --help\fR, \fB-h
 Display a usage message.
 .TP
 .B --version\fR, \fB-V
-Display the version string
+Display the version string.
 .SH PROMPTS
 .B with-readline
 has to deduce the application's prompt, if it has one, by monitoring
@@ -102,6 +119,22 @@ These messages can appear if the pseudo-terminal created by
 has unsuitable permissions for secure operation.  For instance, on
 some platforms it needs to be installed setuid to root to properly
 acquire a pty and if it is not then this problem can arise.
+.SH FILES
+.TP
+.I ~/.inputrc
+Readline configuration file
+.TP
+.I ~/APP_history
+History file for APP.
+.SH ENVIRONMENT
+.TP
+.B HOME
+Home directory (contains history file).
+.TP
+.B HISTFILESIZE
+Maximum history file size.  See
+.B --history
+above.
 .SH "SEE ALSO"
 .BR readline (3)
 .PP

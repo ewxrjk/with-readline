@@ -24,7 +24,7 @@ void (*exitfn)(int) attribute((noreturn)) = exit;
 
 void fatal(int errno_value, const char *fmt, ...) {
   va_list ap;
-  
+
   fprintf(stderr, "FATAL: ");
   va_start(ap, fmt);
   vfprintf(stderr, fmt, ap);
@@ -67,6 +67,15 @@ void *xrealloc(void *ptr, size_t n) {
   }
   if(!(ptr = realloc(ptr, n)))
     fatal(errno, "error calling realloc");
+  return ptr;
+}
+
+void *xmalloc(size_t n) {
+  void *ptr;
+  if(!n)                                /* make ambiguous case unambiguous */
+    return 0;
+  if(!(ptr = malloc(n)))
+    fatal(errno, "error calling malloc");
   return ptr;
 }
 

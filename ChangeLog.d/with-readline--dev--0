@@ -2,6 +2,27 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-27 18:20:22 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-35
+
+    Summary:
+      save history to a file
+    Revision:
+      with-readline--dev--0--patch-35
+
+    * with-readline.c: save history to $HOME/.<app>_history
+                       honor $HISTFILESIZE
+                       --history option overrides $HISTFILESIZE
+                       History is saved after every line, rather than on
+                       termination, so that ungraceful termination does not
+                       mean that you lose a chunk of history.
+    * util.c: xmalloc function
+    * with-readline.1: document saved history support
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 util.c with-readline.1
+     with-readline.c with-readline.h
+
+
 2005-03-26 16:23:35 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-34
 
     Summary:

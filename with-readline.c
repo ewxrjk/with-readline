@@ -29,8 +29,11 @@ static struct termios reading_termios;  /* in-use keyboard settings */
 static struct buffer input;             /* keyboard input */
 static struct buffer line;              /* latest line */
 
+static char *histfile;                  /* path to history file */
+
 static const struct option options[] = {
   { "application", required_argument, 0, 'a' },
+  { "history", required_argument, 0, 'H' },
   { "help", no_argument, 0, 'h' },
   { "version", no_argument, 0, 'V' },
   { 0, 0, 0, 0 }
@@ -41,9 +44,10 @@ static void help(void) {
   xprintf("Usage:\n"
 	  "  with-readline [OPTIONS] -- COMMAND ARGS...\n"
 	  "Options:\n"
-          "  --application APP, -a APP   Set application name\n"
-	  "  --help, -h                  Display usage message\n"
-	  "  --version, -V               Display version number\n");
+          "  --application APP, -a APP      Set application name\n"
+          "  --history ENTRIES, -H ENTRIES  Maximum history to retain\n"
+	  "  --help, -h                     Display usage message\n"
+	  "  --version, -V                  Display version number\n");
   xfclose(stdout);
   exit(0);
 }
@@ -270,6 +274,19 @@ static void catch_signal(int sig, int always) {
             sig, strsignal(sig));
 }
 
+static long convertnum(const char *s, long min, long max) {
+  char *e;
+  long n;
+
+  errno = 0;
+  n = strtol(s, &e, 10);
+  if(errno) fatal(errno, "cannot convert integer '%s'", optarg);
+  if(*e) fatal(0, "not a valid integer '%s'", optarg);
+  if(n > max || n < min) fatal(0, "integer %ld out of range [%ld,%ld]",
+                               n, min, max);
+  return n;
+}
+
 int main(int argc, char **argv) {
   int n, pts, p[2], err;
   char *ptspath, *prompt, *s;
@@ -281,6 +298,8 @@ int main(int argc, char **argv) {
   struct stat sb;
   struct group *g;
   mode_t modemask;
+  const char *home, *histfilesize;
+  long maxhistory = 0;
 
   /* This is supposed to be a list of signals which by default terminate the
    * process.  Excluded are those that make a coredump, on the assumption that
@@ -307,9 +326,13 @@ int main(int argc, char **argv) {
   /* we might be setuid/setgid at this point */
 
   /* parse command line; initial '+' means not to reorder options */
-  while((n = getopt_long(argc, argv, "+hVa:", options, 0)) >= 0) {
+  while((n = getopt_long(argc, argv, "+hVa:H:", options, 0)) >= 0) {
     switch(n) {
     case 'a': app = optarg; break;
+    case 'H':
+      errno = 0;
+      maxhistory = convertnum(optarg, 0, INT_MAX);
+      break;
     case 'h': help();
     case 'V': version();
     default: fatal(0, "invalid option");
@@ -332,6 +355,25 @@ int main(int argc, char **argv) {
       if((app = strrchr(argv[optind], '/'))) ++app;
       else app = argv[optind];
     }
+    /* read in saved history */
+    if(!(home = getenv("HOME")))
+      fatal(0, "HOME is not set");
+    histfile = xmalloc(strlen(home) + strlen(app) + 64);
+    sprintf(histfile, "%s/.%s_history", home, app);
+    if((err = read_history(histfile)) && errno != ENOENT)
+      fatal(err, "error reading %s", histfile);
+    if(maxhistory == 0) {
+      /* determine default history file size the same way GNU Bash does */
+      if((histfilesize = getenv("HISTFILESIZE")))
+        maxhistory = convertnum(histfilesize, 0, INT_MAX);
+      else
+        maxhistory = 500;
+    }
+    stifle_history(maxhistory);
+    /* write the history back out, thus making sure it exists (necessary for
+     * append_history() to work */
+    if((err = write_history(histfile)))
+      fatal(errno, "error writing %s", histfile);
     rl_readline_name = app;
     /* we'll have our own signal handlers */
     rl_catch_signals = 0;
@@ -408,7 +450,11 @@ int main(int argc, char **argv) {
             if((err = do_writen(ptm, &original_termios.c_cc[VEOF], 1)))
               fatal(err, "error writing to pty master");
           } else {
-            if(*s) add_history(s);
+            if(*s) {
+              add_history(s);
+              append_history(1, histfile);
+              /* currently we ignore errors writing the history */
+            }
             /* pass input to slave reader */
             if((err = do_write(ptm, s))
                || (err = do_write(ptm, "\r")))
