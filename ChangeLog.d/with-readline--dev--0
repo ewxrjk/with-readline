@@ -2,6 +2,21 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-12 18:25:07 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-3
+
+    Summary:
+      BSD pty fixes
+    Revision:
+      with-readline--dev--0--patch-3
+
+    * with-readline.c: surrender setuid/setgid privilege, for platforms where
+      you need to be setuid (or setgid) to safely acquire a pty.  Annoyingly
+      you can still unsafely acquire a pty without error on such platforms.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 with-readline.c
+
+
 2005-03-12 17:50:41 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-2
 
     Summary:

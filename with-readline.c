@@ -81,6 +81,29 @@ static void read_line_callback(char *s) {
   }
 }
 
+/* dispose of setgid/setuid bit */
+static void surrender_privilege(void) {
+  gid_t egid;
+  uid_t euid;
+
+  if(getgid() != (egid = getegid())) {
+    if(setregid(getgid(), getgid()) < 0)
+       fatal(errno, "error calling setregid");
+    if(getgid() != getegid())
+      fatal(0, "real and effective group IDs do not match");
+    if(setgid(egid) >= 0)
+      fatal(0, "failed to surrender priviliged group ID");
+  }
+  if(getuid() != (euid = geteuid())) {
+    if(setreuid(getuid(), getuid()) < 0)
+       fatal(errno, "error calling setreuid");
+    if(getuid() != geteuid())
+      fatal(0, "real and effective user IDs do not match");
+    if(setuid(euid) >= 0)
+      fatal(0, "failed to surrender priviliged user ID");
+  }
+}
+
 int main(int argc, char **argv) {
   int n, pts, p[2];
   char *ptspath;
@@ -109,6 +132,7 @@ int main(int argc, char **argv) {
     if(pipe(p) < 0) fatal(errno, "error creating pipe");
     /* create the terminal */
     make_terminal(&ptm, &ptspath);
+    surrender_privilege();
     switch(pid = fork()) {
     case -1: fatal(errno, "error calling fork");
 
