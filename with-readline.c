@@ -116,6 +116,15 @@ static void sighandler(int sig) {
   errno = save;
 }
 
+static void unblock(int sig) {
+  sigset_t ss;
+
+  sigemptyset(&ss);
+  sigaddset(&ss, sig);
+  if(sigprocmask(SIG_UNBLOCK, &ss, 0) < 0)
+    fatal(errno, "error calling sigprocmask");
+}
+
 /* run an iteration of the event loop */
 static void eventloop(void) {
   fd_set fds;
@@ -219,6 +228,13 @@ static void eventloop(void) {
       if(tcsetattr(0, TCSANOW, &reading_termios) < 0)
         fatal(errno, "error calling tcsetattr");
       break;
+    default:                            /* some fatal signal */
+      if(tcsetattr(0, TCSANOW, &original_termios) < 0)
+        fatal(errno, "error calling tcsetattr");
+      unblock(sig);
+      signal(sig, SIG_DFL);
+      kill(getpid(), sig);
+      fatal(errno, "error calling kill");
     }
   }
 }
@@ -231,6 +247,24 @@ static int getc_callback(FILE attribute((unused)) *fp) {
   return *input.start++;
 }
 
+/* Install a signal handler.  If always=1 then always install the handler.  If
+ * always=0 then only install if the handler is currently SIG_IGN. */
+static void catch_signal(int sig, int always) {
+  struct sigaction sa, oldsa;
+
+  sa.sa_handler = sighandler;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = SA_RESTART;
+  if(!always)
+    if(sigaction(sig, 0, &oldsa) < 0)
+      fatal(errno, "error querying signal handler (%d, %s)",
+            sig, strsignal(sig));
+  if(always || oldsa.sa_handler != SIG_IGN)
+    if(sigaction(sig, &sa, 0) < 0)
+      fatal(errno, "error installing signal handler (%d, %s)",
+            sig, strsignal(sig));
+}
+
 int main(int argc, char **argv) {
   int n, pts, p[2], err;
   char *ptspath, *prompt, *s;
@@ -238,8 +272,29 @@ int main(int argc, char **argv) {
   struct winsize w;
   char buf[4096];
   pid_t pid, r;
-  struct sigaction sa;
-  const char *app =0;
+  const char *app = 0;
+
+  /* This is supposed to be a list of signals which by default terminate the
+   * process.  Excluded are those that make a coredump, on the assumption that
+   * you usually want the coredump to reflect the point the signal arrived, not
+   * the handler.
+   */
+  static const int fatal_signals[] = {
+    SIGTERM, SIGINT, SIGHUP, SIGPIPE, SIGALRM, SIGUSR1, SIGUSR2,
+#ifdef SIGPOLL
+    SIGPOLL,
+#endif
+#ifdef SIGPROF
+    SIGPROF,
+#endif
+#ifdef SIGVTALRM
+    SIGVTALRM,
+#endif
+#ifdef SIGLOST
+    SIGLOST,
+#endif
+    0
+  };
 
   /* we might be setuid/setgid at this point */
 
@@ -270,18 +325,20 @@ int main(int argc, char **argv) {
       else app = argv[optind];
     }
     rl_readline_name = app;
-    /* we'll have our own SIGWINCH handler */
+    /* we'll have our own signal handlers */
+    rl_catch_signals = 0;
     rl_catch_sigwinch = 0;
     /* we'll handle signals by writing the signal number into a pipe, so they
      * can be easily picked up by the event loop */
     if(pipe(sigpipe) < 0) fatal(errno, "error creating pipe");
-    sa.sa_handler = sighandler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART;
-    if(sigaction(SIGWINCH, &sa, 0) < 0)
-      fatal(errno, "error installing SIGWINCH handler");
-    if(sigaction(SIGCONT, &sa, 0) < 0)
-      fatal(errno, "error installing SIGCONT handler");
+    unblock(SIGWINCH);
+    catch_signal(SIGWINCH, 1);
+    unblock(SIGCONT);
+    catch_signal(SIGCONT, 1);
+    /* we'll want to clean up on fatal signals.  We won't (normally) get SIGINT
+     * from the keyboard, but it might nonetheless be sent via kill(2). */
+    for(n = 0; fatal_signals[n]; ++n)
+      catch_signal(fatal_signals[n], 0);
     /* get old terminal settings; later on we'll apply these to the subsiduary
      * terminal */
     if(tcgetattr(0, &original_termios) < 0)
@@ -301,6 +358,7 @@ int main(int argc, char **argv) {
       /* wait for child to open slave */
       xclose(p[1]);
       read(p[0], buf, 1);
+      xclose(p[0]);
       /* we always echo input to /dev/tty rather than whatever stdout or stderr
        * happen to be at the moment (it would be better to guarantee to use the
        * same terminal as stdin) */
@@ -350,7 +408,8 @@ int main(int argc, char **argv) {
           }
         }
       }
-      rl_deprep_terminal();
+      if(tcsetattr(0, TCSANOW, &original_termios) < 0)
+        fatal(errno, "error calling tcsetattr");
       /* wait for the child to terminate so we can return its exit status */
       while((r = waitpid(pid, &n, 0)) < 0 && errno == EINTR)
         ;

@@ -2,6 +2,22 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-19 19:14:53 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-24
+
+    Summary:
+      signal handling
+    Revision:
+      with-readline--dev--0--patch-24
+
+    * with-readline.c: clean up on fatal signals, and inhibit Readline from
+      installing its own handlers.
+      Do our own terminal cleanup instead of calling Readline.
+      Close the has-the-child-started pipe after we're done with it.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 with-readline.c
+
+
 2005-03-19 12:51:03 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-23
 
     Summary:
