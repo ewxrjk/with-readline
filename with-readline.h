@@ -65,7 +65,7 @@ extern void (*exitfn)(int) attribute((noreturn));
 
 extern int debugging;
 
-void make_terminal(int *ptmp, int *ptsp, char **slavep);
+void make_terminal(int *ptmp, char **slavep);
 
 #ifndef WCOREDUMP
 # define WCOREDUMP(W) ((W) & 0x80)

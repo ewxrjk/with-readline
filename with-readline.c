@@ -132,7 +132,7 @@ static void sighandler(int sig) {
 }
 
 int main(int argc, char **argv) {
-  int n, pts, parentpts, p[2], err, max;
+  int n, pts, p[2], err, max;
   char *ptspath;
   FILE *tty;
   fd_set fds;
@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
      * not, and when you're addressing a program from the keyboard you probably
      * wanted the terminal behaviour.
      */
-    make_terminal(&ptm, &parentpts, &ptspath);
+    make_terminal(&ptm, &ptspath);
     surrender_privilege();
     /* set app name for Readline */
     if(!app) {
@@ -191,9 +191,9 @@ int main(int argc, char **argv) {
     if(ioctl(0, TIOCGWINSZ, &w) < 0)
       fatal(errno, "error calling ioctl TIOCGWINSZ");
     /* the child will tell the parent that it has completed initialiazation by
-     * closing the this pipe.  The idea is to ensure that when there are no
-     * open instances of the sl ave, this is definitely because the command
-     * (and its descendants) closed it.  */
+     * closing the this pipe.  The idea is to ensure if we read the master and
+     * get eof, this is because the last slave was closed, not because it
+     * hasn't been opened yet. */
     if(pipe(p) < 0) fatal(errno, "error creating pipe");
     switch(pid = fork()) {
     case -1: fatal(errno, "error calling fork");
@@ -203,7 +203,6 @@ int main(int argc, char **argv) {
       /* wait for child to open slave */
       xclose(p[1]);
       read(p[0], buf, 1);
-      xclose(parentpts);
       /* we always echo input to /dev/tty rather than whatever stdout or stderr
        * happen to be at the moment (it would be better to guarantee to use the
        * same terminal as stdin) */
@@ -319,7 +318,6 @@ int main(int argc, char **argv) {
       xclose(p[0]);
       xclose(p[1]);
       /* close stuff we don't need */
-      xclose(parentpts);
       xclose(sigpipe[0]);
       xclose(sigpipe[1]);
       if(pts != 0 && dup2(pts, 0) < 0) fatal(errno, "error calling dup2");

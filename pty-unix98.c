@@ -21,7 +21,7 @@
 #include "with-readline.h"
 
 #if PTY_UNIX98
-void make_terminal(int *ptmp, int *ptsp, char **slavep) {
+void make_terminal(int *ptmp, char **slavep) {
   int ptm, pts;
   const char *slave;
 
@@ -41,7 +41,7 @@ void make_terminal(int *ptmp, int *ptsp, char **slavep) {
     fatal(errno, "error pushing ldterm module");
 #endif
   *ptmp = ptm;
-  *ptsp = pts;
+  xclose(pts);
   *slavep = xstrdup(slave);
 }
 #endif

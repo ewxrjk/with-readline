@@ -2,6 +2,23 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-13 19:35:02 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-18
+
+    Summary:
+      work on Darwin again
+    Revision:
+      with-readline--dev--0--patch-18
+
+    * with-readline.c: No longer get a slave FD back from make_terminal().
+      The previous approach was causing the close of the slave to hang under
+      Darwin.
+    * pty-bsd.c, pty-unix98.c: close the slave FD.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 pty-bsd.c pty-unix98.c
+     with-readline.c with-readline.h
+
+
 2005-03-13 18:48:01 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-17
 
     Summary:

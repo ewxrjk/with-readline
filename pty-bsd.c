@@ -21,7 +21,7 @@
 #include "with-readline.h"
 
 #if PTY_BSD
-void make_terminal(int *ptmp, int *ptsp, char **slavep) {
+void make_terminal(int *ptmp, char **slavep) {
   int ptm, pts;
   char buffer[4096];
 
@@ -29,7 +29,7 @@ void make_terminal(int *ptmp, int *ptsp, char **slavep) {
     fatal(0, "cannot safely allocate a pseudo-terminal");
   if(openpty(&ptm, &pts, buffer, 0, 0)) fatal(errno, "error calling openpty");
   *ptmp = ptm;
-  *ptsp = pts;
+  xclose(pts);
   *slavep = xstrdup(buffer);
 }
 #endif
