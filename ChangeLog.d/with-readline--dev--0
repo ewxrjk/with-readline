@@ -2,6 +2,21 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-12 17:50:41 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-2
+
+    Summary:
+      fixes and FreeBSD support
+    Revision:
+      with-readline--dev--0--patch-2
+
+    * Makefile.am: distribute man page; include getopt*
+    * with-readline.h: move readline includes to the end since they break on
+      FreeBSD otherwise.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 Makefile.am with-readline.h
+
+
 2005-03-12 17:41:30 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-1
 
     Summary:

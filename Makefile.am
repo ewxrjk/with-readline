@@ -21,11 +21,11 @@
 bin_PROGRAMS=with-readline
 
 with_readline_SOURCES=with-readline.c pty-unix98.c pty-bsd.c util.c	\
-with-readline.h
-with_readline_LDADD=$(LIBREADLINE)
+with-readline.h getopt.h
+with_readline_LDADD=$(LIBOBJS) $(LIBREADLINE)
 
 man_MANS=with-readline.1
 
-EXTRA_DIST=ChangeLog.d
+EXTRA_DIST=ChangeLog.d $(man_MANS)
 
 # arch-tag:UzftHuacSCXqQdpEMXpLmQ

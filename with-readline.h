@@ -39,13 +39,13 @@
 #include <getopt.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <readline/readline.h>
-#include <readline/history.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <termios.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 void xfclose(FILE *fp);
 int xprintf(const char *s, ...);
