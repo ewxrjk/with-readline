@@ -2,6 +2,20 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-03-12 18:36:33 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-4
+
+    Summary:
+      insist that BSD ptys be opened safely
+    Revision:
+      with-readline--dev--0--patch-4
+
+    * pty-bsd.c: abort if we do not have euid root.  Insanely, openpty()
+      ignores chown/chmod failing.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 pty-bsd.c
+
+
 2005-03-12 18:25:07 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-3
 
     Summary:

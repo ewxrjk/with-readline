@@ -25,6 +25,8 @@ void make_terminal(int *ptmp, char **slavep) {
   int ptm, pts;
   char buffer[4096];
 
+  if(geteuid())
+    fatal(0, "cannot safely allocate a pseudo-terminal");
   if(openpty(&ptm, &pts, buffer, 0, 0)) fatal(errno, "openpty");
   *ptmp = ptm;
   close(pts);
