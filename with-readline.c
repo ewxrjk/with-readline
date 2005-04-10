@@ -461,7 +461,9 @@ int main(int argc, char **argv) {
               fatal(err, "error writing to pty master");
             free(s);
           }
-          rl_replace_line("", 1);
+          rl_line_buffer[0] = '\0';
+          rl_point = rl_mark = rl_end = 0;
+          rl_free_undo_list();
         }
       }
       if(tcsetattr(0, TCSANOW, &original_termios) < 0)

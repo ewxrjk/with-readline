@@ -2,6 +2,20 @@
 # arch-tag: automatic-ChangeLog--rjk@greenend.org.uk--2004/with-readline--dev--0
 #
 
+2005-04-10 16:08:23 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-38
+
+    Summary:
+      support older readlines
+    Revision:
+      with-readline--dev--0--patch-38
+
+    * with-readline.c: patch from Jacob Nevins to build with ancient versions
+      of Readline.
+
+    modified files:
+     ChangeLog.d/with-readline--dev--0 with-readline.c
+
+
 2005-03-30 19:38:14 GMT	Richard Kettlewell <rjk@greenend.org.uk>	patch-37
 
     Summary:
