@@ -32,4 +32,3 @@ AC_DEFUN([RJK_CHECK_LIB],[
     $5
   fi
 ])
-# arch-tag:d09b2112a218009313949a279401a5b4

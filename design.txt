@@ -191,6 +191,3 @@ References
 
 IEEE Std 1003.1 base definitions chapter 11 "General Terminal Interface"
 http://www.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap11.html
-
-
-# arch-tag:hhbNnL6jYYOPmQLoI0jUMA

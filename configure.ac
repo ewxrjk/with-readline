@@ -186,4 +186,3 @@ AH_BOTTOM([#ifdef __GNUC__
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
-# arch-tag:D1v5cbWiPq7NN+7Ud//oNQ

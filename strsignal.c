@@ -615,4 +615,3 @@ main ()
 }
 
 #endif
-/* arch-tag:NYmSqsiOGTmRWmfK1YLx3w */
