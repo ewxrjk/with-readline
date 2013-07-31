@@ -45,6 +45,7 @@ missing_functions=""
 
 AC_DEFINE(_GNU_SOURCE, 1, [required for e.g. strsignal])
 AC_DEFINE(_XOPEN_SOURCE, 600, [required for e.g. posix_openpt])
+AC_DEFINE([_DARWIN_C_SOURCE], 1, [required for e.g. SIGWINCH])
 
 # Checks for libraries.
 # We save up a list of missing libraries that we can't do without

@@ -183,7 +183,7 @@ static void eventloop(void) {
      * command. */
     if(ch == original_termios.c_cc[VINTR]
        || ch == original_termios.c_cc[VQUIT]) {
-      if((err = do_writen(ptm, &ch, 1)))
+      if((err = do_writen(ptm, (char *)&ch, 1)))
         fatal(err, "error writing to master");
       return;
     }
@@ -447,7 +447,7 @@ int main(int argc, char **argv) {
           free(prompt);
           if(!s) {
             /* send an EOF */
-            if((err = do_writen(ptm, &original_termios.c_cc[VEOF], 1)))
+            if((err = do_writen(ptm, (char *)&original_termios.c_cc[VEOF], 1)))
               fatal(err, "error writing to pty master");
           } else {
             if(*s) {
