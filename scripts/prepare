@@ -34,16 +34,6 @@ for f in /usr/share/common-licenses/GPL-2 $HOME/doc/GPL-2; do
     break
   fi
 done
-for f in getopt.c getopt.h getopt1.c; do
-  if test ! -e $f; then
-    for d in /usr/share/autoproject/cli/c/none /usr/local/share/autoproject/cli/c/none /sw/share/autoproject/cli/c/none; do
-      if test -f $d/$f; then
-        ln -s $d/$f $f
-        break
-      fi
-    done
-  fi
-done
 test -d config.aux || mkdir config.aux
 if test -d $HOME/share/aclocal; then
   aclocal --acdir=$HOME/share/aclocal
@@ -56,4 +46,3 @@ automake -a || true		# for INSTALL
 automake --foreign -a
 cd "$here"
 $srcdir/configure "$@"
-# arch-tag:2RfK89XAbB79MideoM7SkA
