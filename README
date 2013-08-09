@@ -28,6 +28,10 @@ paths then you must tell configure.  For instance on my Mac:
 On BSD systems (including Macs) you must run the installation step as
 root, and the program will be installed setuid to root.
 
+If you get errors about rl_gnu_readline_p then you do not have
+Readline installed, you have some fake instead.  Install Readline and
+try again.
+
 As ever see INSTALL for more information.
 
 Documentation
