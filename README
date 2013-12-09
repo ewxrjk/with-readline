@@ -16,6 +16,9 @@ might or might not work (patches invited).
 Installation
 ------------
 
+If you got it from git:
+  autoreconf -is
+In any case:
   ./configure
   make
   make install

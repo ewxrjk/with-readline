@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 #
 # This file is part of with-readline.
-# Copyright (C) 2005 Richard Kettlewell
+# Copyright (C) 2005, 2013 Richard Kettlewell
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 
 AC_INIT(with-readline, 0.1.1, richard+withreadline@sfere.greenend.org.uk)
 AC_CONFIG_AUX_DIR([config.aux])
-AM_INIT_AUTOMAKE(with-readline, 0.1.1)
+AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_SRCDIR([with-readline.c])
 AM_CONFIG_HEADER([config.h])
 
