@@ -34,6 +34,11 @@
 # include <stropts.h>
 #endif
 
+#if __FreeBSD__
+// For SIGWINCH.  How is this supposed to be done???
+# define __BSD_VISIBLE 1
+#endif
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
