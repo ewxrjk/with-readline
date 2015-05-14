@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 #
 # This file is part of with-readline.
-# Copyright (C) 2005, 2013 Richard Kettlewell
+# Copyright (C) 2005, 2013, 2015 Richard Kettlewell
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ AM_CONFIG_HEADER([config.h])
 
 AC_CANONICAL_HOST
 case "$host_os" in
-linux* | aix* )
+linux* | aix* | gnu* )
   # I'm not sure what a good test for this would be.  AFAICT you just have
   # to know.  The alternative would be to ignore EINVAL from the I_PUSH
   # calls but I'm loathe to throw away errors.
@@ -97,13 +97,20 @@ AC_CHECK_FUNCS([grantpt unlockpt ptsname openpty])
 AC_REPLACE_FUNCS([strsignal])
 
 AC_CACHE_CHECK([pseudo-terminal acquisition model],[rjk_cv_pty_how],[
-  if test "$ac_cv_func_grantpt" = yes && test "$ac_cv_func_unlockpt" = yes && test "$ac_cv_func_ptsname" = yes; then
-    rjk_cv_pty_how=unix98
-  elif test "$ac_cv_func_openpty" = yes; then
+  case "$host_os" in
+  gnu* )
     rjk_cv_pty_how=bsd
-  else
-    rjk_cv_pty_how=unknown
-  fi
+    ;;
+  * )
+    if test "$ac_cv_func_grantpt" = yes && test "$ac_cv_func_unlockpt" = yes && test "$ac_cv_func_ptsname" = yes; then
+      rjk_cv_pty_how=unix98
+    elif test "$ac_cv_func_openpty" = yes; then
+      rjk_cv_pty_how=bsd
+    else
+      rjk_cv_pty_how=unknown
+    fi
+    ;;
+  esac
 ])
 case $rjk_cv_pty_how in
 unix98 )
