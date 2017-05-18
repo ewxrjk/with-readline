@@ -19,7 +19,7 @@
 # USA
 #
 
-AC_INIT(with-readline, 0.1.1, richard+withreadline@sfere.greenend.org.uk)
+AC_INIT(with-readline, 0.1.1, rjk@greenend.org.uk)
 AC_CONFIG_AUX_DIR([config.aux])
 AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_SRCDIR([with-readline.c])
