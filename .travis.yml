@@ -1,16 +1,29 @@
+os:
+- linux
+- osx
+
 dist: trusty
-sudo: required
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - libreadline6-dev
 language: cpp
 compiler:
 - clang
 - gcc
 
-before_install:
-- sudo apt-get update -qq
-- sudo apt-get install -qq libreadline6-dev
+matrix:
+  exclude:
+  - os: osx
+    compiler: gcc
+
+install:
+- if test -e scripts/travis/$TRAVIS_OS_NAME/$CC/install; then scripts/travis/$TRAVIS_OS_NAME/$CC/install; fi
 
 script:
 - autoreconf -is
-- ./configure
+- scripts/travis/$TRAVIS_OS_NAME/$CC/configure
 - make
 - VERBOSE=true make check

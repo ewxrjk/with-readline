@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+prefix="$(brew --prefix readline)"
+./configure CPPFLAGS="-isystem ${prefix}/include" LDFLAGS="-L${prefix}/lib"
